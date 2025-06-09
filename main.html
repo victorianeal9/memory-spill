@@ -299,7 +299,6 @@
       { text: "Her voice calls from another room.", cost: 8, type: "precious" },
       { text: "Tea holds warmth in my hands.", cost: 10, type: "precious" },
       { text: "She says 'Dad' and I am still here.", cost: 12, type: "precious" },
-      { text: "Her laughter: the one sound I keep.", cost: 14, type: "precious" },
       { text: "My footsteps sometimes lose me.", cost: 16, type: "precious" },
       { text: "Thoughts graze paddocks–slow cattle.", cost: 18, type: "precious" },
       { text: "Her small hand: my first understanding of love.", cost: 20, type: "precious" },
@@ -325,13 +324,6 @@
       { text: "Daughters don't visit strangers.", cost: 60, type: "paranoid" }
     ];
 
-    const REPLAY_MEMORIES = [
-      "Her small hand: my first understanding of love.",
-      "Laughter: the one sound I keep.",
-      "Tea holds warmth in my hands.",
-      "Our morning ritual was the whole world."
-    ];
-
     // Global variables
     let memoryLeft = 900;
     let currentIndex = 0;
@@ -339,7 +331,6 @@
     let isActive = false;
     let lastTap = 0;
     let gameEnded = false;
-    let replayUsed = false;
 
     // Elements
     const elements = {
@@ -526,38 +517,6 @@
       gameEnded = true;
       document.body.classList.remove('active');
       elements.finalMessage.classList.add('visible');
-      
-      setTimeout(function() {
-        if (!replayUsed) {
-          elements.finalMessage.classList.add('replay-ready');
-          setupReplay();
-        }
-      }, 4000);
-    }
-
-    function setupReplay() {
-      function replayHandler() {
-        if (replayUsed) return;
-        
-        replayUsed = true;
-        elements.finalMessage.classList.remove('replay-ready');
-        
-        const randomMemory = REPLAY_MEMORIES[Math.floor(Math.random() * REPLAY_MEMORIES.length)];
-        elements.replayFragment.textContent = randomMemory;
-        elements.replayFragment.classList.add('visible');
-        
-        setTimeout(function() {
-          elements.replayFragment.classList.remove('visible');
-        }, 6000);
-        
-        elements.finalMessage.removeEventListener('click', replayHandler);
-      }
-      
-      elements.finalMessage.addEventListener('click', replayHandler);
-      elements.finalMessage.setAttribute('tabindex', '0');
-      setTimeout(function() {
-        elements.finalMessage.focus();
-      }, 100);
     }
   </script>
 </body>
