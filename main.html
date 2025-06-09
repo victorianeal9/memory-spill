@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Connection Lost</title>
   <style>
-    /* ... (all your existing styles unchanged) ... */
     * {
       margin: 0;
       padding: 0;
@@ -322,201 +321,203 @@
       { text: "The mirror blinks first now.", cost: 54, type: "paranoid" },
       { text: "They come for what's left.", cost: 56, type: "paranoid" },
       { text: "She claims to be my daughter.", cost: 58, type: "paranoid" },
-      { text: "The bed is empty; the heart beats somewhere else.", cost: 60, type: "paranoid" },
-      { text: "I am still here but not me.", cost: 62, type: "paranoid" },
-      { text: "Connection lost.", cost: 64, type: "paranoid" }
+      { text: "Daughters don't visit strangers.", cost: 60, type: "paranoid" }
     ];
 
-    const START_MEMORY = 900;
-    const MEMORY_WARNING_THRESHOLD = 150;
+    // Global variables
+    let memoryLeft = 900;
+    let currentIndex = 0;
+    let lastMove = 0;
+    let isActive = false;
+    let lastTap = 0;
+    let gameEnded = false;
 
+    // Elements
     const elements = {
-      cursor: document.getElementById('cursor'),
-      memoryCounter: document.getElementById('memory-counter'),
       memoryCount: document.getElementById('memory-count'),
-      startContainer: document.getElementById('start-container'),
-      startButton: document.getElementById('start-button'),
-      progressBar: document.getElementById('progress-bar'),
+      memoryCounter: document.getElementById('memory-counter'),
       finalMessage: document.getElementById('final-message'),
       replayFragment: document.getElementById('replay-fragment'),
       ariaLiveFragment: document.getElementById('aria-live-fragment'),
+      startButton: document.getElementById('start-button'),
+      startContainer: document.getElementById('start-container'),
+      cursor: document.getElementById('cursor'),
+      progressBar: document.getElementById('progress-bar')
     };
 
-    let memory = START_MEMORY;
-    let index = 0;
-    let lastX = window.innerWidth / 2;
-    let lastY = window.innerHeight / 2;
-    let running = false;
-    let fadeOutFragments = [];
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Page loaded, setting up...');
+      setupCursor();
+      setupStartButton();
+    });
 
     function setupCursor() {
-      window.addEventListener('mousemove', e => {
-        elements.cursor.style.left = `${e.clientX}px`;
-        elements.cursor.style.top = `${e.clientY}px`;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        document.body.style.setProperty('--mouse-x', `${(e.clientX / window.innerWidth) * 100}%`);
-        document.body.style.setProperty('--mouse-y', `${(e.clientY / window.innerHeight) * 100}%`);
+      document.addEventListener('mousemove', function(e) {
+        elements.cursor.style.left = e.clientX + 'px';
+        elements.cursor.style.top = e.clientY + 'px';
+        
+        document.body.style.setProperty('--mouse-x', (e.clientX / window.innerWidth * 100) + '%');
+        document.body.style.setProperty('--mouse-y', (e.clientY / window.innerHeight * 100) + '%');
       });
-    }
-
-    function createTextFragment(text, x, y, type) {
-      const fragment = document.createElement('div');
-      fragment.classList.add('text-fragment');
-      if (type) fragment.classList.add(type);
-      fragment.textContent = text;
-      fragment.style.left = `${x}px`;
-      fragment.style.top = `${y}px`;
-      document.body.appendChild(fragment);
-
-      // Animate appear
-      requestAnimationFrame(() => {
-        fragment.classList.add('appear');
-      });
-
-      // Schedule fade out after 5 seconds
-      setTimeout(() => {
-        fragment.classList.add('fade-out');
-        setTimeout(() => {
-          fragment.remove();
-        }, 1500);
-      }, 5000);
-
-      return fragment;
-    }
-
-    function flashMemoryCounter() {
-      elements.memoryCounter.classList.add('flash');
-      setTimeout(() => {
-        elements.memoryCounter.classList.remove('flash');
-      }, 600);
-    }
-
-    function updateMemoryCost(cost) {
-      memory -= cost;
-      if (memory < 0) memory = 0;
-      elements.memoryCount.textContent = memory;
-
-      if (memory <= MEMORY_WARNING_THRESHOLD) {
-        elements.memoryCounter.style.color = '#ff6b6b';
-        elements.memoryCounter.style.borderColor = 'rgba(255,107,107,0.8)';
-        elements.memoryCounter.style.boxShadow = '0 0 10px rgba(255,107,107,0.6)';
-      } else {
-        elements.memoryCounter.style.color = '#ff6b6b';
-        elements.memoryCounter.style.borderColor = 'rgba(255,107,107,0.3)';
-        elements.memoryCounter.style.boxShadow = 'none';
-      }
-    }
-
-    function updateProgress() {
-      let percent = ((POEM_LINES.length - index) / POEM_LINES.length) * 100;
-      elements.progressBar.style.width = `${percent}%`;
-    }
-
-    function startGame() {
-      if (running) return;
-      running = true;
-
-      elements.startContainer.classList.add('hidden');
-      setTimeout(() => {
-        elements.startContainer.style.display = 'none';
-      }, 1000);
-
-      document.body.classList.add('active');
-      updateProgress();
-      showNextLine();
-    }
-
-    function showNextLine() {
-      if (index >= POEM_LINES.length) {
-        endGame();
-        return;
-      }
-
-      const line = POEM_LINES[index];
-      index++;
-
-      // Pick a random position near last cursor position but not off screen
-      const margin = 100;
-      let x = lastX + (Math.random() * 200 - 100);
-      let y = lastY + (Math.random() * 100 - 50);
-      x = Math.min(window.innerWidth - margin, Math.max(margin, x));
-      y = Math.min(window.innerHeight - margin, Math.max(margin, y));
-
-      createTextFragment(line.text, x, y, line.type);
-
-      updateMemoryCost(line.cost);
-      flashMemoryCounter();
-      updateProgress();
-
-      elements.ariaLiveFragment.textContent = line.text; // For screen readers
-
-      if (memory <= 0) {
-        endGame();
-        return;
-      }
-
-      // Schedule next line randomly between 4-8 seconds
-      const delay = 4000 + Math.random() * 4000;
-      setTimeout(showNextLine, delay);
-    }
-
-    function endGame() {
-      running = false;
-      elements.finalMessage.classList.add('visible');
-
-      // After delay, show replay message
-      setTimeout(() => {
-        elements.replayFragment.textContent = 'Click here or press any key to restart.';
-        elements.replayFragment.classList.add('visible');
-        elements.finalMessage.classList.add('replay-ready');
-
-        function restartHandler() {
-          elements.replayFragment.classList.remove('visible');
-          elements.finalMessage.classList.remove('visible', 'replay-ready');
-          memory = START_MEMORY;
-          index = 0;
-          elements.memoryCount.textContent = memory;
-          elements.memoryCounter.style.color = '#ff6b6b';
-          elements.memoryCounter.style.borderColor = 'rgba(255,107,107,0.3)';
-          elements.memoryCounter.style.boxShadow = 'none';
-          elements.progressBar.style.width = '100%';
-          elements.startContainer.style.display = 'block';
-          elements.startContainer.classList.remove('hidden');
-          document.body.classList.remove('active');
-
-          document.removeEventListener('keydown', restartHandler);
-          elements.finalMessage.removeEventListener('click', restartHandler);
-          setupStartButton();
-        }
-
-        document.addEventListener('keydown', restartHandler);
-        elements.finalMessage.addEventListener('click', restartHandler);
-      }, 2000);
     }
 
     function setupStartButton() {
-      // Remove old event listeners just in case
-      elements.startButton.replaceWith(elements.startButton.cloneNode(true));
-      elements.startButton = document.getElementById('start-button');
-
-      // Instead of listening to startButton click only,
-      // listen to any first click on document to start the game.
-      function firstClickStartHandler(e) {
-        startGame();
-        document.removeEventListener('click', firstClickStartHandler);
+      console.log('Setting up start button...');
+      
+      if (!elements.startButton) {
+        console.error('Start button not found!');
+        return;
       }
 
-      document.addEventListener('click', firstClickStartHandler, { once: true });
+      elements.startButton.addEventListener('click', function() {
+        console.log('Start button clicked!');
+        startGame();
+      });
+
+      elements.startButton.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          console.log('Start button key pressed!');
+          startGame();
+        }
+      });
 
       elements.startButton.focus();
     }
 
-    // Initialize on DOM ready
-    document.addEventListener('DOMContentLoaded', () => {
-      setupCursor();
-      setupStartButton();
-    });
+    function startGame() {
+      console.log('Starting game...');
+      
+      if (isActive) return;
+      
+      isActive = true;
+      document.body.classList.add('active');
+      elements.startContainer.classList.add('hidden');
+      
+      setTimeout(function() {
+        elements.startContainer.style.display = 'none';
+        bindEvents();
+        console.log('Game started and events bound!');
+      }, 1000);
+    }
+
+    function bindEvents() {
+      document.addEventListener('click', function(e) {
+        revealNextLine(e.clientX, e.clientY);
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          revealNextLine(window.innerWidth / 2, window.innerHeight / 2);
+        }
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        const now = Date.now();
+        const threshold = getMovementThreshold();
+        if (now - lastMove > threshold) {
+          revealNextLine(e.clientX, e.clientY);
+          lastMove = now;
+        }
+      });
+
+      document.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        const now = Date.now();
+        const threshold = getMovementThreshold();
+        if (now - lastTap > threshold) {
+          const touch = e.touches[0];
+          revealNextLine(touch.clientX, touch.clientY);
+          lastTap = now;
+        }
+      });
+    }
+
+    function getMovementThreshold() {
+      const progress = currentIndex / POEM_LINES.length;
+      return Math.max(200, 1200 - (progress * 1000));
+    }
+
+    function revealNextLine(x, y) {
+      if (!isActive || currentIndex >= POEM_LINES.length) return;
+
+      const line = POEM_LINES[currentIndex];
+      createFragment(line.text, x, y, line.type);
+      currentIndex++;
+      memoryLeft = Math.max(0, memoryLeft - line.cost);
+      
+      // Update UI
+      elements.memoryCounter.classList.remove('flash');
+      requestAnimationFrame(function() {
+        elements.memoryCounter.classList.add('flash');
+        elements.memoryCount.textContent = Math.round(memoryLeft);
+      });
+      
+      setTimeout(function() {
+        elements.memoryCounter.classList.remove('flash');
+      }, 400);
+
+      updateProgress();
+
+      // Cursor feedback
+      elements.cursor.classList.add('fade');
+      setTimeout(function() {
+        elements.cursor.classList.remove('fade');
+      }, 300);
+
+      if (memoryLeft <= 0 || currentIndex === POEM_LINES.length) {
+        endGame();
+      }
+    }
+
+    function createFragment(text, x, y, type) {
+      const fragment = document.createElement('div');
+      fragment.className = 'text-fragment ' + type;
+      fragment.textContent = text;
+      
+      const maxWidth = 480;
+      const padding = 60;
+      const offsetX = (Math.random() - 0.5) * 200;
+      const offsetY = (Math.random() - 0.5) * 150;
+      
+      const finalX = Math.max(padding, Math.min(window.innerWidth - maxWidth - padding, x + offsetX - maxWidth/2));
+      const finalY = Math.max(padding, Math.min(window.innerHeight - 150, y + offsetY - 30));
+      
+      fragment.style.left = finalX + 'px';
+      fragment.style.top = finalY + 'px';
+      
+      document.body.appendChild(fragment);
+      
+      requestAnimationFrame(function() {
+        fragment.classList.add('appear');
+      });
+      
+      setTimeout(function() {
+        fragment.classList.add('fade-out');
+      }, 3000);
+      
+      setTimeout(function() {
+        if (fragment.parentNode) {
+          fragment.remove();
+        }
+      }, 4500);
+
+      elements.ariaLiveFragment.textContent = text;
+    }
+
+    function updateProgress() {
+      const progress = (currentIndex / POEM_LINES.length) * 100;
+      elements.progressBar.style.width = progress + '%';
+    }
+
+    function endGame() {
+      isActive = false;
+      gameEnded = true;
+      document.body.classList.remove('active');
+      elements.finalMessage.classList.add('visible');
+    }
   </script>
 </body>
 </html>
