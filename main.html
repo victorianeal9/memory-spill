@@ -5,65 +5,170 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Connection Lost</title>
   <style>
-    body {
+    * {
       margin: 0;
-      padding: 20px;
-      font-family: Arial, sans-serif;
-      background: #000;
-      color: #00ff00;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+      color: #e8e8e8;
       overflow: hidden;
-      cursor: crosshair;
+      cursor: none;
       user-select: none;
+      height: 100vh;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                                  rgba(255,255,255,0.03) 0%, 
+                                  rgba(255,255,255,0.01) 40%, 
+                                  transparent 80%);
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      opacity: 0;
+    }
+
+    body.active::before {
+      opacity: 1;
+    }
+
+    .cursor {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 10000;
+      transform: translate(-50%, -50%);
+      transition: all 0.1s ease;
+    }
+
+    .cursor.fade {
+      opacity: 0.3;
+      transform: translate(-50%, -50%) scale(1.5);
+    }
+
+    .hud {
+      position: fixed;
+      z-index: 1000;
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
     }
 
     .memory-counter {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      font-size: 16px;
-      color: #ff0000;
-      background: #000;
-      padding: 6px 10px;
-      border-radius: 5px;
-      border: 2px solid #ff0000;
-      z-index: 1000;
+      top: 30px;
+      right: 30px;
+      color: #ff6b6b;
+      background: rgba(0,0,0,0.7);
+      padding: 8px 12px;
+      border: 1px solid rgba(255,107,107,0.3);
+      border-radius: 3px;
+      backdrop-filter: blur(10px);
+      transition: all 0.4s ease;
     }
 
-    .instruction {
+    .memory-counter.flash {
+      border-color: #ff6b6b;
+      box-shadow: 0 0 20px rgba(255,107,107,0.3);
+      transform: scale(1.05);
+    }
+
+    .start-container {
       position: fixed;
-      bottom: 20px;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
-      font-size: 16px;
-      color: #ffff00;
-      background: rgba(0, 0, 0, 0.85);
-      padding: 15px 20px;
-      border-radius: 8px;
-      max-width: 600px;
+      transform: translate(-50%, -50%);
       text-align: center;
-      box-shadow: 0 0 15px #ff0;
-      z-index: 1000;
+      z-index: 1500;
+      max-width: 500px;
+      padding: 40px;
+    }
+
+    .start-text {
+      color: #b8b8b8;
+      font-size: 18px;
+      line-height: 1.6;
+      margin-bottom: 40px;
+      letter-spacing: 0.5px;
+    }
+
+    .start-button {
+      background: transparent;
+      color: #e8e8e8;
+      border: 2px solid rgba(255,255,255,0.2);
+      padding: 16px 32px;
+      font-size: 16px;
+      font-family: 'Georgia', serif;
+      cursor: pointer;
+      border-radius: 0;
+      transition: all 0.4s ease;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .start-button:hover,
+    .start-button:focus {
+      border-color: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.05);
+      transform: translateY(-2px);
+    }
+
+    .start-container.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
     }
 
     .text-fragment {
       position: absolute;
-      font-size: 22px;
-      max-width: 550px;
-      color: #00ff00;
-      text-shadow: -1px -1px 0 #000, 1px -1px 0 #000,
-                   -1px 1px 0 #000, 1px 1px 0 #000;
+      font-size: 20px;
+      max-width: 480px;
+      line-height: 1.5;
+      color: #f0f0f0;
       pointer-events: none;
-      font-family: 'Courier New', Courier, monospace;
-      line-height: 1.4;
-      user-select: none;
-      font-weight: normal;
       z-index: 10;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+      letter-spacing: 0.3px;
+    }
+
+    .text-fragment.appear {
       opacity: 1;
-      transition: opacity 2s ease-out;
+      transform: translateY(0);
     }
 
     .text-fragment.fade-out {
       opacity: 0;
+      transform: translateY(-10px);
+      transition: all 1.5s ease-out;
+    }
+
+    .text-fragment.precious {
+      color: #ffd700;
+      text-shadow: 0 0 1px rgba(255,215,0,0.5);
+    }
+
+    .text-fragment.confused {
+      color: #ff9999;
+      font-style: italic;
+    }
+
+    .text-fragment.paranoid {
+      color: #ff6b6b;
+      font-weight: bold;
+      letter-spacing: 0.5px;
     }
 
     .final-message {
@@ -71,177 +176,389 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 48px;
+      font-size: 36px;
+      font-weight: normal;
       color: #fff;
       text-align: center;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 40px 50px;
+      border-radius: 0;
       opacity: 0;
-      transition: opacity 3s ease-in;
+      transition: opacity 4s ease-in;
       z-index: 2000;
-      font-weight: bold;
-      background-color: rgba(0, 0, 0, 0.75);
-      padding: 30px 40px;
-      border-radius: 10px;
-      pointer-events: none;
+      cursor: pointer;
+      letter-spacing: 2px;
+      border: 1px solid rgba(255,255,255,0.1);
     }
 
     .final-message.visible {
       opacity: 1;
     }
+
+    .final-message.replay-ready {
+      border-color: rgba(255,255,255,0.3);
+      cursor: pointer;
+      animation: gentle-pulse 3s infinite ease-in-out;
+    }
+
+    @keyframes gentle-pulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+
+    .replay-fragment {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      color: #ffd700;
+      text-align: center;
+      z-index: 2100;
+      opacity: 0;
+      transition: opacity 3s ease-in;
+      pointer-events: none;
+      text-shadow: 0 0 2px rgba(255,215,0,0.3);
+      max-width: 600px;
+      line-height: 1.4;
+    }
+
+    .replay-fragment.visible {
+      opacity: 1;
+    }
+
+    .progress-indicator {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      height: 2px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ffd700, #ff6b6b);
+      width: 0%;
+      transition: width 0.3s ease;
+      border-radius: 1px;
+    }
+
+    /* Accessibility */
+    :focus-visible {
+      outline: 2px solid rgba(255,255,255,0.6);
+      outline-offset: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .text-fragment {
+        font-size: 18px;
+        max-width: 90%;
+      }
+      
+      .final-message {
+        font-size: 28px;
+        padding: 30px 40px;
+      }
+    }
   </style>
 </head>
-<body>
+<body tabindex="0">
+  <div class="cursor" id="cursor"></div>
 
-  <div class="memory-counter" id="memory-counter" aria-live="polite" aria-atomic="true">
-    MEMORY: <span id="memory-count">900</span> MB
+  <div class="hud memory-counter" id="memory-counter" role="status" aria-live="polite" aria-atomic="true">
+    <span id="memory-count">900</span> MB remaining
   </div>
 
-  <div class="instruction" id="instruction" aria-live="polite">
-    Move slowly through the spaces between memory.<br />
-    Each gesture costs what cannot be replaced.<br />
-    When memory runs out, I am lost.<br /><br />
-    Use mouse move, click or press <kbd>Enter</kbd> or <kbd>Spacebar</kbd> to reveal memories.
+  <div class="progress-indicator">
+    <div class="progress-bar" id="progress-bar"></div>
   </div>
 
-  <div class="final-message" id="final-message" role="alert" aria-live="assertive">
-    CONNECTION<br />LOST
+  <div class="start-container" id="start-container">
+    <div class="start-text">
+      Each movement through this space<br />
+      costs what cannot be returned.<br /><br />
+      Move as you feel called to move.
+    </div>
+    <button class="start-button" id="start-button">Begin</button>
   </div>
+
+  <div id="aria-live-fragment" aria-live="polite" aria-atomic="true" style="position:absolute; left:-9999px; height:1px; width:1px; overflow:hidden;"></div>
+
+  <div class="final-message" id="final-message" role="alert" aria-live="assertive" aria-atomic="true">
+    Connection<br />Lost
+  </div>
+
+  <div class="replay-fragment" id="replay-fragment"></div>
 
   <script>
-    const poemLines = [
-      "Morning light through kitchen windows.",
-      "Her voice calls from another room.",
-      "The warmth of tea in my hands.",
-      "Keys hide like old intentions.",
-      "She says 'Dad' and I am still here.",
-      "My face appears in her face.",
-      "Laughter: the one sound I keep.",
-      "Rain murmurs in a language I trust.",
-      "The dog remembers my voice before I do.",
-      "This house listens to my footsteps.",
-      "Thoughts graze the paddock like cattle.",
-      "Her small hand: my first understanding of love.",  
-      "The silence of Sunday–enough.",
-      "I was someone who mattered.",
-      "Our morning ritual was the whole world.",
-      "A woman was here. Warm tea still steams.",
-      "I once told her stories full of summer light.",
-      "Her name begins with the sound of morning.",
-      "Even the car waits without memory",
-      "Something paces quietly behind the walls.",
-      "Furniture moves when I'm not looking.",
-      "A voice I should know calls my name.",
-      "This room forgets it knows me.",
-      "The word Dad arrives — but too late",
-      "Touch hesitates like a stranger at the door",
-      "The walls wear someone else’s memories.",
-      "Footsteps echo where no one walks.",
-      "The walls shift against distance.",
-      "They claim to know my name.",
-      "This woman brings pills and lies.",
-      "Voices whisper about me in doorways.",
-      "The house has been planning this.",
-      "My thoughts are being stolen.",
-      "The mirror blinks first now.",
-      "They're coming for what's left.",
-      "She claims to be my daughter.",
-      "But daughters don't visit strangers.",
-      "They breathe against me as I sleep.",
-      "My name is being erased.",
-      "The walls breathe closer each night.",
-      "This house was never mine.",
-      "Pills that make me smaller.",
-      "Pieces of me fall behind as I walk",
-      "Faces without names hunting me.",
-      "They gather what I can no longer hold",
-      "But I remember warmth once.",
-      "Something bright resists their taking.",
-      "It was real.",
-      "They cannot touch that fact.",
-      "The sun found reasons to shine here.",
-      "Her eyes held my young self.",
-      "All of it is true.",
-      "Despite their watching eyes.",
-      "What I was cannot be undone.",
-      "Something permanent resists.",
-      "I want to go where they can't follow.",
-      "Help me stay."
+    const POEM_LINES = [
+      { text: "Her voice calls from another room.", cost: 8, type: "precious" },
+      { text: "Tea holds warmth in my hands.", cost: 10, type: "precious" },
+      { text: "She says 'Dad' and I am still here.", cost: 12, type: "precious" },
+      { text: "Her laughter: the one sound I keep.", cost: 14, type: "precious" },
+      { text: "My footsteps sometimes lose me.", cost: 16, type: "precious" },
+      { text: "Thoughts graze paddocks–slow cattle.", cost: 18, type: "precious" },
+      { text: "Her small hand: my first understanding of love.", cost: 20, type: "precious" },
+      { text: "Now reaches uncertain, guiding me to a chair.", cost: 22, type: "confused" },
+      { text: "I used to be a first call.", cost: 24, type: "precious" },
+      { text: "Our morning ritual was the whole world.", cost: 26, type: "precious" },
+      { text: "A woman was here, tea still steams.", cost: 28, type: "confused" },
+      { text: "I told her stories of summer light.", cost: 30, type: "confused" },
+      { text: "Her name: three syllables I can't hold.", cost: 32, type: "confused" },
+      { text: "Something paces behind walls.", cost: 34, type: "confused" },
+      { text: "Furniture moves when I'm not looking.", cost: 36, type: "paranoid" },
+      { text: "A voice I should know calls my name.", cost: 38, type: "paranoid" },
+      { text: "This room forgets it knows me.", cost: 40, type: "paranoid" },
+      { text: "'Dad' arrives but too late.", cost: 42, type: "paranoid" },
+      { text: "Touch hesitates at the door.", cost: 44, type: "paranoid" },
+      { text: "The walls remember someone else.", cost: 46, type: "paranoid" },
+      { text: "They speak my name like a question.", cost: 48, type: "paranoid" },
+      { text: "This woman brings pills and lies.", cost: 50, type: "paranoid" },
+      { text: "The house has been planning this: my thoughts being stolen.", cost: 52, type: "paranoid" },
+      { text: "The mirror blinks first now.", cost: 54, type: "paranoid" },
+      { text: "They come for what's left.", cost: 56, type: "paranoid" },
+      { text: "She claims to be my daughter.", cost: 58, type: "paranoid" },
+      { text: "Daughters don't visit strangers.", cost: 60, type: "paranoid" }
     ];
 
-    const memoryCountEl = document.getElementById('memory-count');
-    const finalMessage = document.getElementById('final-message');
-    const instruction = document.getElementById('instruction');
+    const REPLAY_MEMORIES = [
+      "Her small hand: my first understanding of love.",
+      "Laughter: the one sound I keep.",
+      "Tea holds warmth in my hands.",
+      "Our morning ritual was the whole world."
+    ];
 
+    // Global variables
     let memoryLeft = 900;
     let currentIndex = 0;
-    const totalLines = poemLines.length;
-    const memoryCost = memoryLeft / totalLines;
+    let lastMove = 0;
+    let isActive = false;
+    let lastTap = 0;
+    let gameEnded = false;
+    let replayUsed = false;
 
-    function createFragment(text) {
-      const frag = document.createElement('div');
-      frag.className = 'text-fragment';
-      frag.textContent = text;
+    // Elements
+    const elements = {
+      memoryCount: document.getElementById('memory-count'),
+      memoryCounter: document.getElementById('memory-counter'),
+      finalMessage: document.getElementById('final-message'),
+      replayFragment: document.getElementById('replay-fragment'),
+      ariaLiveFragment: document.getElementById('aria-live-fragment'),
+      startButton: document.getElementById('start-button'),
+      startContainer: document.getElementById('start-container'),
+      cursor: document.getElementById('cursor'),
+      progressBar: document.getElementById('progress-bar')
+    };
 
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Page loaded, setting up...');
+      setupCursor();
+      setupStartButton();
+    });
+
+    function setupCursor() {
+      document.addEventListener('mousemove', function(e) {
+        elements.cursor.style.left = e.clientX + 'px';
+        elements.cursor.style.top = e.clientY + 'px';
+        
+        document.body.style.setProperty('--mouse-x', (e.clientX / window.innerWidth * 100) + '%');
+        document.body.style.setProperty('--mouse-y', (e.clientY / window.innerHeight * 100) + '%');
+      });
+    }
+
+    function setupStartButton() {
+      console.log('Setting up start button...');
+      
+      if (!elements.startButton) {
+        console.error('Start button not found!');
+        return;
+      }
+
+      elements.startButton.addEventListener('click', function() {
+        console.log('Start button clicked!');
+        startGame();
+      });
+
+      elements.startButton.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          console.log('Start button key pressed!');
+          startGame();
+        }
+      });
+
+      elements.startButton.focus();
+    }
+
+    function startGame() {
+      console.log('Starting game...');
+      
+      if (isActive) return;
+      
+      isActive = true;
+      document.body.classList.add('active');
+      elements.startContainer.classList.add('hidden');
+      
+      setTimeout(function() {
+        elements.startContainer.style.display = 'none';
+        bindEvents();
+        console.log('Game started and events bound!');
+      }, 1000);
+    }
+
+    function bindEvents() {
+      document.addEventListener('click', function(e) {
+        revealNextLine(e.clientX, e.clientY);
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          revealNextLine(window.innerWidth / 2, window.innerHeight / 2);
+        }
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        const now = Date.now();
+        const threshold = getMovementThreshold();
+        if (now - lastMove > threshold) {
+          revealNextLine(e.clientX, e.clientY);
+          lastMove = now;
+        }
+      });
+
+      document.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        const now = Date.now();
+        const threshold = getMovementThreshold();
+        if (now - lastTap > threshold) {
+          const touch = e.touches[0];
+          revealNextLine(touch.clientX, touch.clientY);
+          lastTap = now;
+        }
+      });
+    }
+
+    function getMovementThreshold() {
+      const progress = currentIndex / POEM_LINES.length;
+      return Math.max(200, 1200 - (progress * 1000));
+    }
+
+    function revealNextLine(x, y) {
+      if (!isActive || currentIndex >= POEM_LINES.length) return;
+
+      const line = POEM_LINES[currentIndex];
+      createFragment(line.text, x, y, line.type);
+      currentIndex++;
+      memoryLeft = Math.max(0, memoryLeft - line.cost);
+      
+      // Update UI
+      elements.memoryCounter.classList.remove('flash');
+      requestAnimationFrame(function() {
+        elements.memoryCounter.classList.add('flash');
+        elements.memoryCount.textContent = Math.round(memoryLeft);
+      });
+      
+      setTimeout(function() {
+        elements.memoryCounter.classList.remove('flash');
+      }, 400);
+
+      updateProgress();
+
+      // Cursor feedback
+      elements.cursor.classList.add('fade');
+      setTimeout(function() {
+        elements.cursor.classList.remove('fade');
+      }, 300);
+
+      if (memoryLeft <= 0 || currentIndex === POEM_LINES.length) {
+        endGame();
+      }
+    }
+
+    function createFragment(text, x, y, type) {
+      const fragment = document.createElement('div');
+      fragment.className = 'text-fragment ' + type;
+      fragment.textContent = text;
+      
+      const maxWidth = 480;
       const padding = 60;
-      const maxWidth = 550;
-      const x = Math.random() * (window.innerWidth - maxWidth - padding * 2) + padding;
-      const y = Math.random() * (window.innerHeight - 200 - padding) + padding;
+      const offsetX = (Math.random() - 0.5) * 200;
+      const offsetY = (Math.random() - 0.5) * 150;
+      
+      const finalX = Math.max(padding, Math.min(window.innerWidth - maxWidth - padding, x + offsetX - maxWidth/2));
+      const finalY = Math.max(padding, Math.min(window.innerHeight - 150, y + offsetY - 30));
+      
+      fragment.style.left = finalX + 'px';
+      fragment.style.top = finalY + 'px';
+      
+      document.body.appendChild(fragment);
+      
+      requestAnimationFrame(function() {
+        fragment.classList.add('appear');
+      });
+      
+      setTimeout(function() {
+        fragment.classList.add('fade-out');
+      }, 3000);
+      
+      setTimeout(function() {
+        if (fragment.parentNode) {
+          fragment.remove();
+        }
+      }, 4500);
 
-      frag.style.left = `${x}px`;
-      frag.style.top = `${y}px`;
+      elements.ariaLiveFragment.textContent = text;
+    }
 
-      document.body.appendChild(frag);
+    function updateProgress() {
+      const progress = (currentIndex / POEM_LINES.length) * 100;
+      elements.progressBar.style.width = progress + '%';
+    }
 
-      setTimeout(() => {
-        frag.classList.add('fade-out');
-        setTimeout(() => frag.remove(), 2000);
+    function endGame() {
+      isActive = false;
+      gameEnded = true;
+      document.body.classList.remove('active');
+      elements.finalMessage.classList.add('visible');
+      
+      setTimeout(function() {
+        if (!replayUsed) {
+          elements.finalMessage.classList.add('replay-ready');
+          setupReplay();
+        }
       }, 4000);
     }
 
-    function revealNextLine() {
-      if (currentIndex >= totalLines) return;
-
-      createFragment(poemLines[currentIndex]);
-      currentIndex++;
-      memoryLeft -= memoryCost;
-      if (memoryLeft < 0) memoryLeft = 0;
-      memoryCountEl.textContent = Math.round(memoryLeft);
-
-      if (memoryLeft <= 0 || currentIndex === totalLines) {
-        finalMessage.classList.add('visible');
-        document.body.style.cursor = 'default';
-        removeAllListeners();
+    function setupReplay() {
+      function replayHandler() {
+        if (replayUsed) return;
+        
+        replayUsed = true;
+        elements.finalMessage.classList.remove('replay-ready');
+        
+        const randomMemory = REPLAY_MEMORIES[Math.floor(Math.random() * REPLAY_MEMORIES.length)];
+        elements.replayFragment.textContent = randomMemory;
+        elements.replayFragment.classList.add('visible');
+        
+        setTimeout(function() {
+          elements.replayFragment.classList.remove('visible');
+        }, 6000);
+        
+        elements.finalMessage.removeEventListener('click', replayHandler);
       }
+      
+      elements.finalMessage.addEventListener('click', replayHandler);
+      elements.finalMessage.setAttribute('tabindex', '0');
+      setTimeout(function() {
+        elements.finalMessage.focus();
+      }, 100);
     }
-
-    function removeAllListeners() {
-      window.removeEventListener('click', onClick);
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('mousemove', onMouseMove);
-    }
-
-    function onClick() {
-      revealNextLine();
-    }
-
-    function onKeyDown(e) {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        revealNextLine();
-      }
-    }
-
-    let lastMove = 0;
-    function onMouseMove() {
-      const now = Date.now();
-      if (now - lastMove > 250) {
-        revealNextLine();
-        lastMove = now;
-      }
-    }
-
-    window.addEventListener('click', onClick);
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('mousemove', onMouseMove);
   </script>
 </body>
 </html>
