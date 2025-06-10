@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Connection Lost</title>
+  <title>Where You Look</title>
   <style>
     * {
       margin: 0;
@@ -13,100 +13,43 @@
 
     body {
       font-family: 'Georgia', serif;
-      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+      background: #0a0a0a;
       color: #e8e8e8;
       overflow: hidden;
-      cursor: none;
       user-select: none;
       height: 100vh;
       position: relative;
+      cursor: none;
     }
 
-    body::before {
-      content: '';
+    .permission-screen {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-                                  rgba(255,255,255,0.03) 0%, 
-                                  rgba(255,255,255,0.01) 40%, 
-                                  transparent 80%);
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-      opacity: 0;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
     }
 
-    body.active::before {
-      opacity: 1;
-    }
-
-    .cursor {
-      position: fixed;
-      width: 8px;
-      height: 8px;
-      background: rgba(255,255,255,0.6);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 10000;
-      transform: translate(-50%, -50%);
-      transition: all 0.1s ease;
-    }
-
-    .cursor.fade {
-      opacity: 0.3;
-      transform: translate(-50%, -50%) scale(1.5);
-    }
-
-    .hud {
-      position: fixed;
-      z-index: 1000;
-      font-size: 14px;
-      font-family: 'Courier New', monospace;
-    }
-
-    .memory-counter {
-      top: 30px;
-      right: 30px;
-      color: #ff6b6b;
-      background: rgba(0,0,0,0.7);
-      padding: 8px 12px;
-      border: 1px solid rgba(255,107,107,0.3);
-      border-radius: 3px;
-      backdrop-filter: blur(10px);
-      transition: all 0.4s ease;
-    }
-
-    .memory-counter.flash {
-      border-color: #ff6b6b;
-      box-shadow: 0 0 20px rgba(255,107,107,0.3);
-      transform: scale(1.05);
-    }
-
-    .start-container {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      z-index: 1500;
-      max-width: 500px;
-      padding: 40px;
-    }
-
-    .start-text {
+    .permission-text {
       color: #b8b8b8;
       font-size: 18px;
       line-height: 1.6;
+      text-align: center;
       margin-bottom: 40px;
+      max-width: 500px;
       letter-spacing: 0.5px;
     }
 
-    .start-button {
+    .permission-button {
       background: transparent;
       color: #e8e8e8;
-      border: 2px solid rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
       padding: 16px 32px;
       font-size: 16px;
       font-family: 'Georgia', serif;
@@ -114,444 +57,608 @@
       border-radius: 0;
       transition: all 0.4s ease;
       letter-spacing: 1px;
-      text-transform: uppercase;
     }
 
-    .start-button:hover,
-    .start-button:focus {
+    .permission-button:hover,
+    .permission-button:focus {
       border-color: rgba(255,255,255,0.6);
       background: rgba(255,255,255,0.05);
-      transform: translateY(-2px);
     }
 
-    .start-container.hidden {
+    .permission-screen.hidden {
       opacity: 0;
       pointer-events: none;
       transition: opacity 1s ease;
     }
 
-    .text-fragment {
+    .poem-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-width: 800px;
+      height: 60%;
+      display: none;
+    }
+
+    .poem-line {
       position: absolute;
-      font-size: 20px;
-      max-width: 480px;
-      line-height: 1.5;
-      color: #f0f0f0;
-      pointer-events: none;
-      z-index: 10;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
-      letter-spacing: 0.3px;
-    }
-
-    .text-fragment.appear {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .text-fragment.fade-out {
-      opacity: 0;
-      transform: translateY(-10px);
-      transition: all 1.5s ease-out;
-    }
-
-    .text-fragment.precious {
-      color: #ffd700;
-      text-shadow: 0 0 1px rgba(255,215,0,0.5);
-    }
-
-    .text-fragment.confused {
-      color: #ff9999;
-      font-style: italic;
-    }
-
-    .text-fragment.paranoid {
-      color: #ff6b6b;
-      font-weight: bold;
-      letter-spacing: 0.5px;
-    }
-
-    .final-message {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 36px;
-      font-weight: normal;
-      color: #fff;
-      text-align: center;
-      background: rgba(0, 0, 0, 0.9);
-      padding: 40px 50px;
-      border-radius: 0;
-      opacity: 0;
-      transition: opacity 4s ease-in;
-      z-index: 2000;
-      cursor: pointer;
-      letter-spacing: 2px;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .final-message.visible {
-      opacity: 1;
-    }
-
-    .final-message.replay-ready {
-      border-color: rgba(255,255,255,0.3);
-      cursor: pointer;
-      animation: gentle-pulse 3s infinite ease-in-out;
-    }
-
-    @keyframes gentle-pulse {
-      0%, 100% { opacity: 0.8; }
-      50% { opacity: 1; }
-    }
-
-    .replay-fragment {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
       font-size: 24px;
-      color: #ffd700;
-      text-align: center;
-      z-index: 2100;
-      opacity: 0;
-      transition: opacity 3s ease-in;
-      pointer-events: none;
-      text-shadow: 0 0 2px rgba(255,215,0,0.3);
-      max-width: 600px;
       line-height: 1.4;
+      letter-spacing: 0.3px;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      white-space: nowrap;
     }
 
-    .replay-fragment.visible {
+    .word {
+      display: inline-block;
+      margin-right: 8px;
+      transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+      position: relative;
+    }
+
+    .word.focused {
+      color: #ffd700;
+      text-shadow: 0 0 3px rgba(255, 215, 0, 0.3);
+      transform: scale(1.05);
+    }
+
+    .word.degrading {
+      color: #888;
+    }
+
+    .word.fading {
+      color: #444;
+      opacity: 0.6;
+    }
+
+    .word.dying {
+      color: #222;
+      opacity: 0.3;
+    }
+
+    .word.dead {
+      color: transparent;
+      opacity: 0;
+    }
+
+    .meta-text {
+      color: #ff6b6b;
+      font-size: 28px;
+      text-align: center;
+      font-weight: bold;
+      text-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    .plea-text {
+      color: #ffd700;
+      font-size: 24px;
+      text-align: center;
+      font-style: italic;
+      text-shadow: 0 0 3px rgba(255, 215, 0, 0.3);
+    }
+
+    .desperate-text {
+      color: #ff4444;
+      font-size: 22px;
+      text-align: center;
+      animation: shake 1s infinite;
+    }
+
+    .breaking-text {
+      color: #666;
+      font-size: 18px;
+      text-align: center;
+      opacity: 0.7;
+      animation: flicker 0.5s infinite;
+    }
+
+    .final-gratitude {
+      color: #87ceeb;
+      font-size: 26px;
+      text-align: center;
+      opacity: 0;
+      animation: fadeInGratitude 3s ease-in forwards;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      75% { transform: translateX(2px); }
+    }
+
+    @keyframes flicker {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 0.3; }
+    }
+
+    @keyframes fadeInGratitude {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .gaze-indicator {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 215, 0, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1000;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .gaze-indicator.active {
       opacity: 1;
     }
 
-    .progress-indicator {
+    .status {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #666;
+      font-size: 12px;
+      font-family: monospace;
+      z-index: 100;
+    }
+
+    .instructions {
       position: fixed;
       bottom: 30px;
       left: 50%;
       transform: translateX(-50%);
-      width: 300px;
-      height: 2px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 1px;
-      overflow: hidden;
-    }
-
-    .progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #ffd700, #ff6b6b);
-      width: 0%;
-      transition: width 0.3s ease;
-      border-radius: 1px;
-    }
-
-    /* Accessibility */
-    :focus-visible {
-      outline: 2px solid rgba(255,255,255,0.6);
-      outline-offset: 4px;
+      color: #666;
+      font-size: 14px;
+      text-align: center;
+      letter-spacing: 0.5px;
     }
 
     @media (max-width: 768px) {
-      .text-fragment {
-        font-size: 18px;
-        max-width: 90%;
+      .poem-line {
+        font-size: 20px;
       }
       
-      .final-message {
-        font-size: 28px;
-        padding: 30px 40px;
+      .permission-text {
+        font-size: 16px;
+        padding: 0 20px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="cursor" id="cursor"></div>
-
-  <div class="hud memory-counter" id="memory-counter" role="status" aria-live="polite" aria-atomic="true">
-    <span id="memory-count">900</span> MB remaining
-  </div>
-
-  <div class="progress-indicator">
-    <div class="progress-bar" id="progress-bar"></div>
-  </div>
-
-  <div class="start-container" id="start-container">
-    <div class="start-text">
-      Each movement costs<br />
-      what cannot be returned.<br /><br />
-      Move as you feel called to move.
+  <div class="permission-screen" id="permission-screen">
+    <div class="permission-text">
+      This poem responds to where you look.<br /><br />
+      
+      Words survive only while you watch them.<br />
+      What you don't see begins to fade.<br /><br />
+      
+      <small>(Using mouse movement as gaze tracking)</small>
     </div>
-    <button class="start-button" id="start-button">Begin</button>
+    <button class="permission-button" id="permission-button">Begin Experience</button>
   </div>
 
-  <div id="aria-live-fragment" aria-live="polite" aria-atomic="true" style="position:absolute; left:-9999px; height:1px; width:1px; overflow:hidden;"></div>
-
-  <div class="final-message" id="final-message" role="alert" aria-live="assertive" aria-atomic="true">
-    Connection<br />Lost
+  <div class="poem-container" id="poem-container">
+    <!-- Poem lines will be inserted here -->
   </div>
 
-  <div class="replay-fragment" id="replay-fragment"></div>
+  <div class="gaze-indicator" id="gaze-indicator"></div>
+  
+  <div class="status" id="status">Initializing...</div>
+  
+  <div class="instructions" id="instructions">
+    Look directly at words to keep them alive
+  </div>
 
   <script>
-    const POEM_LINES = [
-      { text: "Her voice calls from another room.", cost: 8, type: "precious" },
-      { text: "Tea holds warmth in my hands.", cost: 10, type: "precious" },
-      { text: "She says 'Dad' and I am still here.", cost: 12, type: "precious" },
-      { text: "My footsteps sometimes lose me.", cost: 16, type: "precious" },
-      { text: "Thoughts graze paddocks–slow cattle.", cost: 18, type: "precious" },
-      { text: "Her small hand: my first understanding of love.", cost: 20, type: "precious" },
-      { text: "I used to be a first call.", cost: 22, type: "precious" },
-      { text: "Our morning ritual was the whole world.", cost: 24, type: "precious" },
-      { text: "A woman was here, tea still steams.", cost: 26, type: "confused" },
-      { text: "I told her stories of summer light.", cost: 28, type: "confused" },
-      { text: "Her name: three syllables I can't hold.", cost: 30, type: "confused" },
-      { text: "Now reaches uncertain, guiding me to a chair.", cost: 32, type: "confused" },
-      { text: "Something paces behind walls.", cost: 34, type: "confused" },
-      { text: "Furniture moves when I'm not looking.", cost: 36, type: "paranoid" },
-      { text: "A voice I should know calls my name.", cost: 38, type: "paranoid" },
-      { text: "This room forgets it knows me.", cost: 40, type: "paranoid" },
-      { text: "'Dad' arrives but too late.", cost: 42, type: "paranoid" },
-      { text: "Touch hesitates at the door.", cost: 44, type: "paranoid" },
-      { text: "The walls remember someone else.", cost: 46, type: "paranoid" },
-      { text: "They speak my name like a question.", cost: 48, type: "paranoid" },
-      { text: "This woman brings pills and lies.", cost: 50, type: "paranoid" },
-      { text: "The house has been planning this: my thoughts being stolen.", cost: 52, type: "paranoid" },
-      { text: "The mirror blinks first now.", cost: 54, type: "paranoid" },
-      { text: "They come for what's left.", cost: 56, type: "paranoid" },
-      { text: "She claims to be my daughter.", cost: 58, type: "paranoid" },
-      { text: "Daughters don't visit strangers.", cost: 60, type: "paranoid" }
+    const POEM_LINES_US = [
+      { text: "She brings me tea the way mom taught her", delay: 0 },
+      { text: "Steam rises between us", delay: 3000 },
+      { text: "Her hands move with practiced certainty", delay: 6000 },
+      { text: "I should know these hands", delay: 9000 },
+      { text: "The woman making tea has kind eyes", delay: 12000 },
+      { text: "She calls me a name that sounds familiar", delay: 15000 },
+      { text: "Her voice carries love I recognize", delay: 18000 },
+      { text: "but can't quite place", delay: 21000 },
+      { text: "She sits in the chair she's always chosen", delay: 24000 },
+      { text: "Has she always been here", delay: 27000 },
+      { text: "The tea tastes like home", delay: 30000 },
+      { text: "Her lips move: It's me Dad", delay: 33000 },
+      { text: "I want to help her find", delay: 36000 },
+      { text: "whoever she's looking for", delay: 39000 }
+    ];
+
+    const POEM_LINES_UK = [
+      { text: "She brings me tea the way mum taught her", delay: 0 },
+      { text: "Steam rises between us", delay: 3000 },
+      { text: "Her hands move with practised certainty", delay: 6000 },
+      { text: "I should know these hands", delay: 9000 },
+      { text: "The woman making tea has kind eyes", delay: 12000 },
+      { text: "She calls me a name that sounds familiar", delay: 15000 },
+      { text: "Her voice carries love I recognise", delay: 18000 },
+      { text: "but can't quite place", delay: 21000 },
+      { text: "She sits in the chair she's always chosen", delay: 24000 },
+      { text: "Has she always been here", delay: 27000 },
+      { text: "The tea tastes like home", delay: 30000 },
+      { text: "Her lips move: It's me Dad", delay: 33000 },
+      { text: "I want to help her find", delay: 36000 },
+      { text: "whoever she's looking for", delay: 39000 }
+    ];
+
+    // Detect user's locale and select appropriate version
+    const userLocale = navigator.language || navigator.userLanguage || 'en-US';
+    const isUK = userLocale.startsWith('en-GB') || userLocale.startsWith('en-AU') || userLocale.startsWith('en-NZ');
+    const POEM_LINES = isUK ? POEM_LINES_UK : POEM_LINES_US;
+
+    const ENDING_SEQUENCE = [
+      { text: "You cannot save this", delay: 45000, type: "meta" },
+      { text: "Look away now", delay: 48000, type: "plea" },
+      { text: "Please... let me go", delay: 53000, type: "desperate", condition: "still_looking" },
+      { text: "I'm sorry... I'm sorry...", delay: 58000, type: "breaking", condition: "still_looking" }
     ];
 
     // Global variables
-    let memoryLeft = 900;
-    let currentIndex = 0;
-    let lastMove = 0;
-    let isActive = false;
-    let lastTap = 0;
-    let gameEnded = false;
-    let gameStarted = false;
+    let gazeTracker = null;
+    let currentGaze = { x: 0, y: 0 };
+    let words = [];
+    let permissionGranted = false;
+    let poemStarted = false;
+    let endingPhase = false;
+    let metaAware = false;
+    let lookingAway = false;
+    let lastGazeTime = Date.now();
+    let endingSequenceIndex = 0;
 
     // Elements
     const elements = {
-      memoryCount: document.getElementById('memory-count'),
-      memoryCounter: document.getElementById('memory-counter'),
-      finalMessage: document.getElementById('final-message'),
-      replayFragment: document.getElementById('replay-fragment'),
-      ariaLiveFragment: document.getElementById('aria-live-fragment'),
-      startButton: document.getElementById('start-button'),
-      startContainer: document.getElementById('start-container'),
-      cursor: document.getElementById('cursor'),
-      progressBar: document.getElementById('progress-bar')
+      permissionScreen: document.getElementById('permission-screen'),
+      permissionButton: document.getElementById('permission-button'),
+      poemContainer: document.getElementById('poem-container'),
+      gazeIndicator: document.getElementById('gaze-indicator'),
+      status: document.getElementById('status'),
+      instructions: document.getElementById('instructions')
     };
 
-    // Initialize immediately when script loads
-    console.log('Initializing...');
-    setupCursor();
-    setupStartButton();
+    // Initialize
+    setupPermissionButton();
 
-    function setupCursor() {
-      document.addEventListener('mousemove', function(e) {
-        if (elements.cursor) {
-          elements.cursor.style.left = e.clientX + 'px';
-          elements.cursor.style.top = e.clientY + 'px';
-        }
-        
-        document.body.style.setProperty('--mouse-x', (e.clientX / window.innerWidth * 100) + '%');
-        document.body.style.setProperty('--mouse-y', (e.clientY / window.innerHeight * 100) + '%');
+    function setupPermissionButton() {
+      elements.permissionButton.addEventListener('click', function() {
+        // Skip camera request, go straight to mouse tracking
+        elements.status.textContent = 'Using mouse movement as gaze tracking';
+        setupMouseGazeTracking();
+        hidePermissionScreen();
       });
-    }
-
-    function setupStartButton() {
-      console.log('Setting up start button...');
       
-      // Multiple ways to ensure the button works
-      function handleStart(e) {
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        
-        if (gameStarted) return;
-        
-        console.log('Starting game...');
-        gameStarted = true;
-        startGame();
-      }
-
-      // Click event
-      elements.startButton.addEventListener('click', handleStart);
-      
-      // Keyboard events
-      elements.startButton.addEventListener('keydown', function(e) {
+      elements.permissionButton.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
-          handleStart(e);
+          e.preventDefault();
+          elements.status.textContent = 'Using mouse movement as gaze tracking';
+          setupMouseGazeTracking();
+          hidePermissionScreen();
         }
       });
-
-      // Touch events for mobile
-      elements.startButton.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        handleStart(e);
-      });
-
-      // Focus the button
-      elements.startButton.focus();
     }
 
-    function startGame() {
-      console.log('Game starting...');
-      
-      isActive = true;
-      document.body.classList.add('active');
-      elements.startContainer.classList.add('hidden');
-      
-      // Bind game events immediately
-      bindGameEvents();
-      
-      // Hide start container after animation
-      setTimeout(function() {
-        elements.startContainer.style.display = 'none';
-        console.log('Game fully started and ready!');
+    async function requestCameraPermission() {
+      try {
+        // Check if getUserMedia is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Camera not supported in this browser');
+        }
+        
+        elements.status.textContent = 'Requesting camera access...';
+        
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: 640, 
+            height: 480,
+            facingMode: 'user'
+          } 
+        });
+        
+        permissionGranted = true;
+        elements.status.textContent = 'Camera ready - using gaze tracking...';
+        
+        await initializeGazeTracking(stream);
+        hidePermissionScreen();
+        
+      } catch (error) {
+        console.error('Camera access issue:', error);
+        // Fallback to mouse tracking
+        elements.status.textContent = 'Using mouse tracking (camera not available)';
+        setupMouseGazeTracking();
+        hidePermissionScreen();
+      }
+    }
+
+    async function initializeGazeTracking(stream) {
+      try {
+        // Create video element for webcam feed (hidden)
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.autoplay = true;
+        video.style.display = 'none';
+        document.body.appendChild(video);
+
+        // Wait for video to be ready
+        await new Promise(resolve => {
+          video.addEventListener('loadedmetadata', resolve);
+        });
+
+        // Simple mouse tracking as fallback for demo
+        // In production, you'd integrate WebGazer.js or similar
+        setupMouseGazeTracking();
+        
+        elements.status.textContent = 'Gaze tracking active';
+        
+      } catch (error) {
+        console.error('Gaze tracking initialization failed:', error);
+        // Fallback to mouse tracking
+        setupMouseGazeTracking();
+        elements.status.textContent = 'Using mouse tracking (demo mode)';
+      }
+    }
+
+    function setupMouseGazeTracking() {
+      // Fallback: use mouse position as gaze proxy
+      document.addEventListener('mousemove', function(e) {
+        currentGaze.x = e.clientX;
+        currentGaze.y = e.clientY;
+        lastGazeTime = Date.now();
+        lookingAway = false;
+        updateGazeIndicator();
+      });
+
+      // Track when mouse leaves the window (looking away)
+      document.addEventListener('mouseleave', function() {
+        lookingAway = true;
+      });
+
+      document.addEventListener('mouseenter', function() {
+        lookingAway = false;
+        lastGazeTime = Date.now();
+      });
+
+      // Hide mouse cursor for immersion
+      document.body.style.cursor = 'none';
+    }
+
+    function updateGazeIndicator() {
+      elements.gazeIndicator.style.left = currentGaze.x + 'px';
+      elements.gazeIndicator.style.top = currentGaze.y + 'px';
+      elements.gazeIndicator.classList.add('active');
+    }
+
+    function hidePermissionScreen() {
+      elements.permissionScreen.classList.add('hidden');
+      setTimeout(() => {
+        elements.permissionScreen.style.display = 'none';
+        startPoem();
       }, 1000);
     }
 
-    function bindGameEvents() {
-      console.log('Binding game events...');
+    function startPoem() {
+      elements.poemContainer.style.display = 'block';
+      poemStarted = true;
       
-      // Click to reveal
-      document.addEventListener('click', function(e) {
-        if (isActive && !gameEnded) {
-          revealNextLine(e.clientX, e.clientY);
-        }
+      // Start word degradation loop
+      setInterval(updateWordStates, 100);
+      
+      // Add poem lines with delays
+      POEM_LINES.forEach((line, index) => {
+        setTimeout(() => {
+          addPoemLine(line.text, index);
+        }, line.delay);
       });
 
-      // Keyboard to reveal
-      document.addEventListener('keydown', function(e) {
-        if (isActive && !gameEnded && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          revealNextLine(window.innerWidth / 2, window.innerHeight / 2);
-        }
+      // Start ending sequence
+      ENDING_SEQUENCE.forEach((ending, index) => {
+        setTimeout(() => {
+          handleEndingSequence(ending, index);
+        }, ending.delay);
       });
+    }
 
-      // Mouse movement to reveal
-      document.addEventListener('mousemove', function(e) {
-        if (!isActive || gameEnded) return;
+    function addPoemLine(text, lineIndex) {
+      const lineElement = document.createElement('div');
+      lineElement.className = 'poem-line';
+      
+      // Position lines vertically spaced
+      const containerHeight = elements.poemContainer.offsetHeight;
+      const lineHeight = containerHeight / POEM_LINES.length;
+      const yPosition = lineIndex * lineHeight;
+      
+      lineElement.style.top = yPosition + 'px';
+      lineElement.style.left = '50%';
+      lineElement.style.transform = 'translateX(-50%)';
+      
+      // Split into words
+      const wordsArray = text.split(' ');
+      wordsArray.forEach((wordText, wordIndex) => {
+        const wordElement = document.createElement('span');
+        wordElement.className = 'word';
+        wordElement.textContent = wordText;
+        wordElement.setAttribute('data-line', lineIndex);
+        wordElement.setAttribute('data-word', wordIndex);
         
-        const now = Date.now();
-        const threshold = getMovementThreshold();
-        if (now - lastMove > threshold) {
-          revealNextLine(e.clientX, e.clientY);
-          lastMove = now;
-        }
-      });
-
-      // Touch events for mobile
-      document.addEventListener('touchstart', function(e) {
-        if (!isActive || gameEnded) return;
+        // Initialize word state
+        const wordData = {
+          element: wordElement,
+          lastGazeTime: Date.now(),
+          degradationLevel: 0,
+          originalText: wordText,
+          line: lineIndex,
+          word: wordIndex
+        };
         
-        e.preventDefault();
-        const now = Date.now();
-        const threshold = getMovementThreshold();
-        if (now - lastTap > threshold) {
-          const touch = e.touches[0];
-          revealNextLine(touch.clientX, touch.clientY);
-          lastTap = now;
+        words.push(wordData);
+        lineElement.appendChild(wordElement);
+      });
+      
+      elements.poemContainer.appendChild(lineElement);
+    }
+
+    function updateWordStates() {
+      if (!poemStarted) return;
+      
+      const now = Date.now();
+      
+      words.forEach(wordData => {
+        const rect = wordData.element.getBoundingClientRect();
+        const distance = Math.sqrt(
+          Math.pow(currentGaze.x - (rect.left + rect.width / 2), 2) +
+          Math.pow(currentGaze.y - (rect.top + rect.height / 2), 2)
+        );
+        
+        // Check if gaze is on this word (within 50px radius)
+        if (distance < 50) {
+          // Word is being looked at
+          wordData.lastGazeTime = now;
+          wordData.degradationLevel = Math.max(0, wordData.degradationLevel - 2);
+          wordData.element.classList.add('focused');
+          wordData.element.classList.remove('degrading', 'fading', 'dying', 'dead');
+        } else {
+          // Word is not being looked at
+          wordData.element.classList.remove('focused');
+          
+          const timeSinceGaze = now - wordData.lastGazeTime;
+          
+          // Increase degradation over time
+          if (timeSinceGaze > 1000) {
+            wordData.degradationLevel += 0.5;
+          }
+          
+          // Apply degradation effects
+          if (wordData.degradationLevel > 10) {
+            wordData.element.classList.add('dead');
+            degradeWordText(wordData);
+          } else if (wordData.degradationLevel > 7) {
+            wordData.element.classList.add('dying');
+            degradeWordText(wordData);
+          } else if (wordData.degradationLevel > 4) {
+            wordData.element.classList.add('fading');
+            degradeWordText(wordData);
+          } else if (wordData.degradationLevel > 2) {
+            wordData.element.classList.add('degrading');
+          }
         }
       });
     }
 
-    function getMovementThreshold() {
-      const progress = currentIndex / POEM_LINES.length;
-      return Math.max(200, 1200 - (progress * 1000));
+    function degradeWordText(wordData) {
+      const degradationLevel = Math.floor(wordData.degradationLevel);
+      const originalText = wordData.originalText;
+      let degradedText = originalText;
+      
+      if (degradationLevel > 5) {
+        // Replace characters with dots
+        const charsToReplace = Math.min(degradationLevel - 5, originalText.length);
+        degradedText = originalText.substring(0, Math.max(0, originalText.length - charsToReplace)) + 
+                     '.'.repeat(charsToReplace);
+      }
+      
+      if (degradationLevel > 10) {
+        // Complete degradation
+        degradedText = '.'.repeat(originalText.length);
+      }
+      
+      wordData.element.textContent = degradedText;
     }
 
-    function revealNextLine(x, y) {
-      if (!isActive || currentIndex >= POEM_LINES.length || gameEnded) return;
+    function handleEndingSequence(ending, index) {
+      endingSequenceIndex = index;
 
-      const line = POEM_LINES[currentIndex];
-      createFragment(line.text, x, y, line.type);
-      currentIndex++;
-      memoryLeft = Math.max(0, memoryLeft - line.cost);
-      
-      // Update UI
-      elements.memoryCounter.classList.remove('flash');
-      requestAnimationFrame(function() {
-        elements.memoryCounter.classList.add('flash');
-        elements.memoryCount.textContent = Math.round(memoryLeft);
-      });
-      
-      setTimeout(function() {
-        elements.memoryCounter.classList.remove('flash');
-      }, 400);
-
-      updateProgress();
-
-      // Cursor feedback
-      if (elements.cursor) {
-        elements.cursor.classList.add('fade');
-        setTimeout(function() {
-          elements.cursor.classList.remove('fade');
-        }, 300);
+      // Check conditions
+      if (ending.condition === "still_looking" && (lookingAway || Date.now() - lastGazeTime > 3000)) {
+        // User looked away - show gratitude and end
+        if (!metaAware) {
+          showGratitude();
+        }
+        return;
       }
 
-      if (memoryLeft <= 0 || currentIndex === POEM_LINES.length) {
-        endGame();
+      if (index === 0) {
+        // First meta moment - "You cannot save this"
+        startMetaPhase();
+        metaAware = true;
+      }
+
+      // Clear previous ending text
+      clearEndingText();
+
+      // Add new ending text
+      const endingElement = document.createElement('div');
+      endingElement.className = `poem-line ${ending.type}-text ending-text`;
+      endingElement.textContent = ending.text;
+      endingElement.id = 'current-ending';
+      
+      // Position in center
+      endingElement.style.top = '50%';
+      endingElement.style.left = '50%';
+      endingElement.style.transform = 'translate(-50%, -50%)';
+      endingElement.style.position = 'fixed';
+      endingElement.style.zIndex = '1000';
+      
+      elements.poemContainer.appendChild(endingElement);
+
+      // Monitor for looking away during plea phases
+      if (ending.type === "plea" || ending.type === "desperate") {
+        setTimeout(() => {
+          if (lookingAway || Date.now() - lastGazeTime > 3000) {
+            showGratitude();
+          }
+        }, 2000);
       }
     }
 
-    function createFragment(text, x, y, type) {
-      const fragment = document.createElement('div');
-      fragment.className = 'text-fragment ' + type;
-      fragment.textContent = text;
-      
-      const maxWidth = 480;
-      const padding = 60;
-      const offsetX = (Math.random() - 0.5) * 200;
-      const offsetY = (Math.random() - 0.5) * 150;
-      
-      const finalX = Math.max(padding, Math.min(window.innerWidth - maxWidth - padding, x + offsetX - maxWidth/2));
-      const finalY = Math.max(padding, Math.min(window.innerHeight - 150, y + offsetY - 30));
-      
-      fragment.style.left = finalX + 'px';
-      fragment.style.top = finalY + 'px';
-      
-      document.body.appendChild(fragment);
-      
-      requestAnimationFrame(function() {
-        fragment.classList.add('appear');
+    function startMetaPhase() {
+      endingPhase = true;
+      // Fade all existing words rapidly
+      words.forEach(wordData => {
+        wordData.degradationLevel = 15;
+        wordData.element.classList.add('dead');
       });
+    }
+
+    function clearEndingText() {
+      const existing = document.getElementById('current-ending');
+      if (existing) {
+        existing.remove();
+      }
+    }
+
+    function showGratitude() {
+      clearEndingText();
       
-      setTimeout(function() {
-        fragment.classList.add('fade-out');
+      const gratitudeElement = document.createElement('div');
+      gratitudeElement.className = 'poem-line final-gratitude';
+      gratitudeElement.textContent = 'Thank you';
+      gratitudeElement.style.position = 'fixed';
+      gratitudeElement.style.top = '50%';
+      gratitudeElement.style.left = '50%';
+      gratitudeElement.style.transform = 'translate(-50%, -50%)';
+      gratitudeElement.style.zIndex = '1000';
+      
+      elements.poemContainer.appendChild(gratitudeElement);
+      
+      // Fade everything to black after gratitude
+      setTimeout(() => {
+        document.body.style.transition = 'background-color 5s ease';
+        document.body.style.backgroundColor = '#000';
+        gratitudeElement.style.transition = 'opacity 3s ease';
+        gratitudeElement.style.opacity = '0';
       }, 3000);
-      
-      setTimeout(function() {
-        if (fragment.parentNode) {
-          fragment.remove();
-        }
-      }, 4500);
-
-      if (elements.ariaLiveFragment) {
-        elements.ariaLiveFragment.textContent = text;
-      }
-    }
-
-    function updateProgress() {
-      const progress = (currentIndex / POEM_LINES.length) * 100;
-      if (elements.progressBar) {
-        elements.progressBar.style.width = progress + '%';
-      }
-    }
-
-    function endGame() {
-      isActive = false;
-      gameEnded = true;
-      document.body.classList.remove('active');
-      if (elements.finalMessage) {
-        elements.finalMessage.classList.add('visible');
-      }
     }
   </script>
 </body>
