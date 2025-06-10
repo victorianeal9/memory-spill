@@ -266,7 +266,7 @@
     }
   </style>
 </head>
-<body tabindex="0">
+<body>
   <div class="cursor" id="cursor"></div>
 
   <div class="hud memory-counter" id="memory-counter" role="status" aria-live="polite" aria-atomic="true">
@@ -331,6 +331,7 @@
     let isActive = false;
     let lastTap = 0;
     let gameEnded = false;
+    let gameStarted = false;
 
     // Elements
     const elements = {
@@ -345,17 +346,17 @@
       progressBar: document.getElementById('progress-bar')
     };
 
-    // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('Page loaded, setting up...');
-      setupCursor();
-      setupStartButton();
-    });
+    // Initialize immediately when script loads
+    console.log('Initializing...');
+    setupCursor();
+    setupStartButton();
 
     function setupCursor() {
       document.addEventListener('mousemove', function(e) {
-        elements.cursor.style.left = e.clientX + 'px';
-        elements.cursor.style.top = e.clientY + 'px';
+        if (elements.cursor) {
+          elements.cursor.style.left = e.clientX + 'px';
+          elements.cursor.style.top = e.clientY + 'px';
+        }
         
         document.body.style.setProperty('--mouse-x', (e.clientX / window.innerWidth * 100) + '%');
         document.body.style.setProperty('--mouse-y', (e.clientY / window.innerHeight * 100) + '%');
@@ -365,56 +366,79 @@
     function setupStartButton() {
       console.log('Setting up start button...');
       
-      if (!elements.startButton) {
-        console.error('Start button not found!');
-        return;
+      // Multiple ways to ensure the button works
+      function handleStart(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        
+        if (gameStarted) return;
+        
+        console.log('Starting game...');
+        gameStarted = true;
+        startGame();
       }
 
-      elements.startButton.addEventListener('click', function() {
-        console.log('Start button clicked!');
-        startGame();
-      });
-
+      // Click event
+      elements.startButton.addEventListener('click', handleStart);
+      
+      // Keyboard events
       elements.startButton.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          console.log('Start button key pressed!');
-          startGame();
+          handleStart(e);
         }
       });
 
+      // Touch events for mobile
+      elements.startButton.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        handleStart(e);
+      });
+
+      // Focus the button
       elements.startButton.focus();
     }
 
     function startGame() {
-      console.log('Starting game...');
-      
-      if (isActive) return;
+      console.log('Game starting...');
       
       isActive = true;
       document.body.classList.add('active');
       elements.startContainer.classList.add('hidden');
       
+      // Bind game events immediately
+      bindGameEvents();
+      
+      // Hide start container after animation
       setTimeout(function() {
         elements.startContainer.style.display = 'none';
-        bindEvents();
-        console.log('Game started and events bound!');
+        console.log('Game fully started and ready!');
       }, 1000);
     }
 
-    function bindEvents() {
+    function bindGameEvents() {
+      console.log('Binding game events...');
+      
+      // Click to reveal
       document.addEventListener('click', function(e) {
-        revealNextLine(e.clientX, e.clientY);
+        if (isActive && !gameEnded) {
+          revealNextLine(e.clientX, e.clientY);
+        }
       });
 
+      // Keyboard to reveal
       document.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (isActive && !gameEnded && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           revealNextLine(window.innerWidth / 2, window.innerHeight / 2);
         }
       });
 
+      // Mouse movement to reveal
       document.addEventListener('mousemove', function(e) {
+        if (!isActive || gameEnded) return;
+        
         const now = Date.now();
         const threshold = getMovementThreshold();
         if (now - lastMove > threshold) {
@@ -423,7 +447,10 @@
         }
       });
 
+      // Touch events for mobile
       document.addEventListener('touchstart', function(e) {
+        if (!isActive || gameEnded) return;
+        
         e.preventDefault();
         const now = Date.now();
         const threshold = getMovementThreshold();
@@ -441,7 +468,7 @@
     }
 
     function revealNextLine(x, y) {
-      if (!isActive || currentIndex >= POEM_LINES.length) return;
+      if (!isActive || currentIndex >= POEM_LINES.length || gameEnded) return;
 
       const line = POEM_LINES[currentIndex];
       createFragment(line.text, x, y, line.type);
@@ -462,10 +489,12 @@
       updateProgress();
 
       // Cursor feedback
-      elements.cursor.classList.add('fade');
-      setTimeout(function() {
-        elements.cursor.classList.remove('fade');
-      }, 300);
+      if (elements.cursor) {
+        elements.cursor.classList.add('fade');
+        setTimeout(function() {
+          elements.cursor.classList.remove('fade');
+        }, 300);
+      }
 
       if (memoryLeft <= 0 || currentIndex === POEM_LINES.length) {
         endGame();
@@ -504,19 +533,25 @@
         }
       }, 4500);
 
-      elements.ariaLiveFragment.textContent = text;
+      if (elements.ariaLiveFragment) {
+        elements.ariaLiveFragment.textContent = text;
+      }
     }
 
     function updateProgress() {
       const progress = (currentIndex / POEM_LINES.length) * 100;
-      elements.progressBar.style.width = progress + '%';
+      if (elements.progressBar) {
+        elements.progressBar.style.width = progress + '%';
+      }
     }
 
     function endGame() {
       isActive = false;
       gameEnded = true;
       document.body.classList.remove('active');
-      elements.finalMessage.classList.add('visible');
+      if (elements.finalMessage) {
+        elements.finalMessage.classList.add('visible');
+      }
     }
   </script>
 </body>
