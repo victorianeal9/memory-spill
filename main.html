@@ -435,8 +435,8 @@
       // Start word degradation loop
       setInterval(updateWordStates, 100);
       
-      // Start checking for looking away during ending phase
-      lookAwayCheckInterval = setInterval(checkForLookingAway, 500);
+      // Start checking for looking away during ending phase (more frequent)
+      lookAwayCheckInterval = setInterval(checkForLookingAway, 200);
       
       // Add poem lines with delays
       POEM_LINES.forEach((line, index) => {
@@ -545,7 +545,11 @@
         isLookingAtText = true;
         lastTimeOnText = now;
       } else {
-        isLookingAtText = false;
+        // Only update isLookingAtText to false if we're actually not looking at text
+        // Give a small buffer to prevent flickering
+        if (now - lastTimeOnText > 100) {
+          isLookingAtText = false;
+        }
       }
     }
 
@@ -575,14 +579,23 @@
       const now = Date.now();
       const timeSinceOnText = now - lastTimeOnText;
       
-      // If user hasn't looked at text for 2 seconds during ending phase, show gratitude
-      if (timeSinceOnText > 2000 && !isLookingAtText) {
+      // During ending phase, be more responsive to looking away
+      // If user hasn't looked at text for 1 second (reduced from 2), show gratitude
+      if (timeSinceOnText > 1000 && !isLookingAtText) {
         showGratitude();
       }
       
       // Also check if mouse is outside window
       if (lookingAway) {
         showGratitude();
+      }
+      
+      // Additional check: if user is not currently looking at any text right now
+      if (!isLookingAtText && endingPhase) {
+        // Give a shorter grace period once "look away" message appears
+        if (timeSinceOnText > 800) {
+          showGratitude();
+        }
       }
     }
 
