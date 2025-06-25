@@ -293,6 +293,10 @@
     let lookingAway = false;
     let lastGazeTime = Date.now();
     let endingSequenceIndex = 0;
+    let isLookingAtText = false;
+    let lastTimeOnText = Date.now();
+    let gratitudeShown = false;
+    let lookAwayCheckInterval = null;
 
     // Elements
     const elements = {
@@ -398,6 +402,7 @@
       // Track when mouse leaves the window (looking away)
       document.addEventListener('mouseleave', function() {
         lookingAway = true;
+        isLookingAtText = false;
       });
 
       document.addEventListener('mouseenter', function() {
@@ -429,6 +434,9 @@
       
       // Start word degradation loop
       setInterval(updateWordStates, 100);
+      
+      // Start checking for looking away during ending phase
+      lookAwayCheckInterval = setInterval(checkForLookingAway, 500);
       
       // Add poem lines with delays
       POEM_LINES.forEach((line, index) => {
@@ -488,6 +496,7 @@
       if (!poemStarted) return;
       
       const now = Date.now();
+      let currentlyLookingAtAnyText = false;
       
       words.forEach(wordData => {
         const rect = wordData.element.getBoundingClientRect();
@@ -497,12 +506,13 @@
         );
         
         // Check if gaze is on this word (within 50px radius)
-        if (distance < 50) {
+        if (distance < 50 && !lookingAway) {
           // Word is being looked at
           wordData.lastGazeTime = now;
           wordData.degradationLevel = Math.max(0, wordData.degradationLevel - 2);
           wordData.element.classList.add('focused');
           wordData.element.classList.remove('degrading', 'fading', 'dying', 'dead');
+          currentlyLookingAtAnyText = true;
         } else {
           // Word is not being looked at
           wordData.element.classList.remove('focused');
@@ -529,6 +539,14 @@
           }
         }
       });
+      
+      // Update text-looking state
+      if (currentlyLookingAtAnyText) {
+        isLookingAtText = true;
+        lastTimeOnText = now;
+      } else {
+        isLookingAtText = false;
+      }
     }
 
     function degradeWordText(wordData) {
@@ -551,23 +569,34 @@
       wordData.element.textContent = degradedText;
     }
 
+    function checkForLookingAway() {
+      if (!endingPhase || gratitudeShown) return;
+      
+      const now = Date.now();
+      const timeSinceOnText = now - lastTimeOnText;
+      
+      // If user hasn't looked at text for 2 seconds during ending phase, show gratitude
+      if (timeSinceOnText > 2000 && !isLookingAtText) {
+        showGratitude();
+      }
+      
+      // Also check if mouse is outside window
+      if (lookingAway) {
+        showGratitude();
+      }
+    }
+
     function handleEndingSequence(ending, index) {
       endingSequenceIndex = index;
 
-      // Check conditions
-      if (ending.condition === "still_looking" && (lookingAway || Date.now() - lastGazeTime > 3000)) {
-        // User looked away - show gratitude and end
-        if (!metaAware) {
-          showGratitude();
-        }
-        return;
-      }
-
       if (index === 0) {
-        // First meta moment - "You cannot save this"
+        // First meta moment - start the ending phase
         startMetaPhase();
         metaAware = true;
       }
+
+      // Don't show more ending messages if gratitude already shown
+      if (gratitudeShown) return;
 
       // Clear previous ending text
       clearEndingText();
@@ -586,15 +615,6 @@
       endingElement.style.zIndex = '1000';
       
       elements.poemContainer.appendChild(endingElement);
-
-      // Monitor for looking away during plea phases
-      if (ending.type === "plea" || ending.type === "desperate") {
-        setTimeout(() => {
-          if (lookingAway || Date.now() - lastGazeTime > 3000) {
-            showGratitude();
-          }
-        }, 2000);
-      }
     }
 
     function startMetaPhase() {
@@ -614,7 +634,15 @@
     }
 
     function showGratitude() {
+      if (gratitudeShown) return;
+      gratitudeShown = true;
+      
       clearEndingText();
+      
+      // Clear the look away check interval
+      if (lookAwayCheckInterval) {
+        clearInterval(lookAwayCheckInterval);
+      }
       
       const gratitudeElement = document.createElement('div');
       gratitudeElement.className = 'poem-line final-gratitude';
