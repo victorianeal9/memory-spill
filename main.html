@@ -125,35 +125,31 @@
     }
 
     .meta-text {
-      color: #ff6b6b;
-      font-size: 28px;
-      text-align: center;
-      font-weight: bold;
-      text-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
-      animation: pulse 2s infinite ease-in-out;
-    }
-
-    .plea-text {
-      color: #ffd700;
+      color: #b8b8b8;
       font-size: 24px;
       text-align: center;
       font-style: italic;
-      text-shadow: 0 0 3px rgba(255, 215, 0, 0.3);
+    }
+
+    .plea-text {
+      color: #b8b8b8;
+      font-size: 24px;
+      text-align: center;
+      font-style: italic;
     }
 
     .desperate-text {
-      color: #ff4444;
+      color: #888;
       font-size: 22px;
       text-align: center;
-      animation: shake 1s infinite;
+      font-style: italic;
     }
 
     .breaking-text {
       color: #666;
-      font-size: 18px;
+      font-size: 20px;
       text-align: center;
-      opacity: 0.7;
-      animation: flicker 0.5s infinite;
+      font-style: italic;
     }
 
     .final-gratitude {
@@ -162,22 +158,6 @@
       text-align: center;
       opacity: 0;
       animation: fadeInGratitude 3s ease-in forwards;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 0.8; }
-      50% { transform: scale(1.05); opacity: 1; }
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-2px); }
-      75% { transform: translateX(2px); }
-    }
-
-    @keyframes flicker {
-      0%, 100% { opacity: 0.7; }
-      50% { opacity: 0.3; }
     }
 
     @keyframes fadeInGratitude {
@@ -269,12 +249,12 @@
       { text: "I should know these hands", delay: 9000 },
       { text: "The woman making tea has kind eyes", delay: 12000 },
       { text: "She calls me a name that sounds familiar", delay: 15000 },
-      { text: "Her voice carries love I recognize", delay: 18000 },
+      { text: "Her voice carries love I recognise", delay: 18000 },
       { text: "but can't quite place", delay: 21000 },
       { text: "She sits in the chair beside me", delay: 24000 },
       { text: "Has she always been there", delay: 27000 },
       { text: "I reach for her through morning fog", delay: 30000 },
-      { text: "With love, please let me go", delay: 36000 },
+      { text: "With love, please let me go", delay: 33000 },
     ];
 
     const POEM_LINES_UK = [
@@ -289,7 +269,7 @@
       { text: "She sits in the chair beside me", delay: 24000 },
       { text: "Has she always been there", delay: 27000 },
       { text: "I reach for her through morning fog", delay: 30000 },
-      { text: "With love, please let me go", delay: 36000 },
+      { text: "With love, please let me go", delay: 33000 },
     ];
 
     // Detect user's locale and select appropriate version
@@ -298,9 +278,9 @@
     const POEM_LINES = isUK ? POEM_LINES_UK : POEM_LINES_US;
 
     const ENDING_SEQUENCE = [
-      { text: "Look away now", delay: 48000, type: "plea" },
-      { text: "Please... let me go", delay: 53000, type: "desperate", condition: "still_looking" },
-      { text: "I'm sorry....", delay: 58000, type: "breaking", condition: "still_looking" }
+      { text: "Look away now", delay: 38000, type: "plea" },
+      { text: "Please... let me go", delay: 43000, type: "desperate", condition: "still_looking" },
+      { text: "I'm sorry....", delay: 48000, type: "breaking", condition: "still_looking" }
     ];
 
     // Global variables
@@ -656,6 +636,19 @@
         gratitudeElement.style.opacity = '0';
       }, 3000);
     }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      // Reposition poem lines after orientation change
+      const containerHeight = elements.poemContainer.offsetHeight;
+      const usableHeight = containerHeight * 0.8;
+      const lineHeight = usableHeight / POEM_LINES.length;
+      
+      document.querySelectorAll('.poem-line').forEach((line, index) => {
+        const yPosition = (containerHeight * 0.1) + (index * lineHeight);
+        line.style.top = yPosition + 'px';
+      });
+    });
   </script>
 </body>
 </html>
