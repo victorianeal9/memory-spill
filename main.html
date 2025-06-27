@@ -363,7 +363,7 @@
     function setupInterface() {
       if (isTouchDevice) {
         elements.trackingMethod.textContent = 'Touch and drag to focus on words';
-        elements.instructions.textContent = 'Touch and drag to keep words alive';
+        elements.instructions.textContent = 'Focus on words to keep them alive';
         elements.status.textContent = 'Touch device detected';
         
         // Larger gaze indicator for touch
@@ -371,8 +371,8 @@
         elements.gazeIndicator.style.height = '40px';
         elements.gazeIndicator.style.borderWidth = '3px';
       } else {
-        elements.trackingMethod.textContent = 'Using mouse movement as gaze tracking';
-        elements.instructions.textContent = 'Look directly at words to keep them alive';
+        elements.trackingMethod.textContent = 'Move your cursor to focus on words';
+        elements.instructions.textContent = 'Focus on words to keep them alive';
         elements.status.textContent = 'Mouse tracking ready';
       }
     }
