@@ -216,11 +216,10 @@
         white-space: normal;
         width: 90%;
         left: 5% !important;
-        transform: none !important;
+        transform: translateX(-50%) !important;
         text-align: center;
         padding: 0 10px;
         line-height: 1.3;
-        margin-bottom: 15px;
       }
       
       .permission-text {
@@ -243,14 +242,6 @@
         bottom: 20px;
       }
 
-      .instructions::after {
-        content: "\A(Scroll will follow the poem automatically)";
-        white-space: pre;
-        font-style: italic;
-        font-size: 0.9em;
-        opacity: 0.7;
-      }
-
       .status {
         font-size: 10px;
       }
@@ -261,22 +252,7 @@
       }
 
       .poem-content {
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-right: 10px;
-      }
-
-      .poem-content::-webkit-scrollbar {
-        width: 3px;
-      }
-
-      .poem-content::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.1);
-      }
-
-      .poem-content::-webkit-scrollbar-thumb {
-        background: rgba(255,215,0,0.3);
-        border-radius: 3px;
+        overflow: hidden;
       }
     }
 
@@ -322,39 +298,37 @@
 
   <script>
     const POEM_LINES_US = [
-      { text: "She brings me tea the way mom taught her", delay: 0 },
-      { text: "Steam rises between us", delay: 3000 },
+      { text: "Tea. Her hands mother-taught.", delay: 0 },
+      { text: "Steam thickens between us", delay: 3000 },
       { text: "Her hands move with practised certainty", delay: 6000 },
-      { text: "I should know these hands", delay: 9000 },
+      { text: "Her hands remember everything", delay: 9000 },
       { text: "The woman making tea has kind eyes", delay: 12000 },
-      { text: "She calls me a name that sounds familiar", delay: 15000 },
-      { text: "Her voice carries love I recognize", delay: 18000 },
-      { text: "but can't quite place", delay: 21000 },
-      { text: "She sits in the chair beside me", delay: 24000 },
-      { text: "Has she always been there", delay: 27000 },
-      { text: "I reach for her through the morning", delay: 30000 },
-      { text: "With love, please let me go", delay: 33000 },
+      { text: "She says my name like it still fits", delay: 15000 },
+      { text: "She loves me. I can feel it.", delay: 18000 },
+      { text: "She sits in the chair beside me", delay: 21000 },
+      { text: "Has she always been there", delay: 24000 },
+      { text: "I reach out but cannot surface", delay: 27000 },
+      { text: "With love, please let me go", delay: 30000 },
     ];
 
     const POEM_LINES_UK = [
-      { text: "She brings me tea the way mum taught her", delay: 0 },
-      { text: "Steam rises between us", delay: 3000 },
+      { text: "Tea. Her hands mother-taught.", delay: 0 },
+      { text: "Steam thickens between us", delay: 3000 },
       { text: "Her hands move with practised certainty", delay: 6000 },
-      { text: "I should know these hands", delay: 9000 },
+      { text: "Her hands remember everything", delay: 9000 },
       { text: "The woman making tea has kind eyes", delay: 12000 },
-      { text: "She calls me a name that sounds familiar", delay: 15000 },
-      { text: "Her voice carries love I recognise", delay: 18000 },
-      { text: "but can't quite place", delay: 21000 },
-      { text: "She sits in the chair beside me", delay: 24000 },
-      { text: "Has she always been there", delay: 27000 },
-      { text: "I reach for her through the morning", delay: 30000 },
-      { text: "With love, please let me go", delay: 33000 },
+      { text: "She says my name like it still fits", delay: 15000 },
+      { text: "She loves me. I can feel it.", delay: 18000 },
+      { text: "She sits in the chair beside me", delay: 21000 },
+      { text: "Has she always been there", delay: 24000 },
+      { text: "I reach out but cannot surface", delay: 27000 },
+      { text: "With love, please let me go", delay: 30000 },
     ];
 
     const ENDING_SEQUENCE = [
-      { text: "Look away now", delay: 38000, type: "plea" },
-      { text: "Please... let me go", delay: 43000, type: "desperate", condition: "still_looking" },
-      { text: "I'm sorry....", delay: 48000, type: "breaking", condition: "still_looking" }
+      { text: "Look away now", delay: 35000, type: "plea" },
+      { text: "Please... let me go", delay: 40000, type: "desperate", condition: "still_looking" },
+      { text: "I'm sorry....", delay: 45000, type: "breaking", condition: "still_looking" }
     ];
 
     // Detect user's locale and select appropriate version
@@ -529,23 +503,24 @@
     function addPoemLine(text, lineIndex) {
       const lineElement = document.createElement('div');
       lineElement.className = 'poem-line';
-      lineElement.setAttribute('data-line-index', lineIndex);
       
-      // Position lines vertically spaced - adjust for mobile wrapping
-      let yPosition;
-      
+      // Position lines vertically spaced
       if (isTouchDevice) {
-        // Use relative positioning for mobile (allows scrolling)
-        lineElement.style.position = 'relative';
-        lineElement.style.marginBottom = '40px';
-        lineElement.style.marginTop = lineIndex === 0 ? '20px' : '0';
-        lineElement.style.opacity = '0';
-        lineElement.style.transition = 'opacity 1s ease-in';
+        // Use absolute positioning for mobile too, but with tighter spacing
+        const containerHeight = elements.poemContainer.offsetHeight;
+        const lineHeight = containerHeight / POEM_LINES.length;
+        const yPosition = lineIndex * lineHeight + 10; // Small top offset
+        lineElement.style.position = 'absolute';
+        lineElement.style.top = yPosition + 'px';
+        lineElement.style.left = '50%';
+        lineElement.style.transform = 'translateX(-50%)';
+        lineElement.style.width = '90%';
+        lineElement.style.textAlign = 'center';
       } else {
         // Absolute positioning for desktop
         const containerHeight = elements.poemContainer.offsetHeight;
         const lineHeight = containerHeight / POEM_LINES.length;
-        yPosition = lineIndex * lineHeight;
+        const yPosition = lineIndex * lineHeight;
         lineElement.style.top = yPosition + 'px';
         lineElement.style.left = '50%';
         lineElement.style.transform = 'translateX(-50%)';
@@ -575,38 +550,6 @@
       });
       
       elements.poemContent.appendChild(lineElement);
-      
-      // Auto-scroll and fade in on mobile - multiple methods for reliability
-      if (isTouchDevice) {
-        // Immediate scroll using multiple approaches
-        requestAnimationFrame(() => {
-          lineElement.style.opacity = '1';
-          
-          // Method 1: scrollIntoView
-          try {
-            lineElement.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center',
-              inline: 'nearest'
-            });
-          } catch (e) {
-            console.log('scrollIntoView failed, trying alternative');
-          }
-          
-          // Method 2: Direct scroll calculation (backup)
-          setTimeout(() => {
-            const containerRect = elements.poemContent.getBoundingClientRect();
-            const lineRect = lineElement.getBoundingClientRect();
-            const containerScrollTop = elements.poemContent.scrollTop;
-            const targetScroll = containerScrollTop + (lineRect.top - containerRect.top) - (containerRect.height / 2) + (lineRect.height / 2);
-            
-            elements.poemContent.scrollTo({
-              top: Math.max(0, targetScroll),
-              behavior: 'smooth'
-            });
-          }, 200);
-        });
-      }
     }
 
     function updateWordStates() {
@@ -733,26 +676,7 @@
       endingElement.style.position = 'fixed';
       endingElement.style.zIndex = '1000';
       
-      if (isTouchDevice) {
-        // For mobile, append to main container so it's always visible
-        elements.poemContainer.appendChild(endingElement);
-        // Force scroll to bottom with multiple methods
-        setTimeout(() => {
-          // Method 1: scroll to bottom
-          elements.poemContent.scrollTo({
-            top: elements.poemContent.scrollHeight,
-            behavior: 'smooth'
-          });
-          
-          // Method 2: backup scroll (more aggressive)
-          setTimeout(() => {
-            elements.poemContent.scrollTop = elements.poemContent.scrollHeight;
-          }, 500);
-        }, 100);
-      } else {
-        // For desktop, use the original positioning
-        elements.poemContent.appendChild(endingElement);
-      }
+      elements.poemContainer.appendChild(endingElement);
     }
 
     function startMetaPhase() {
