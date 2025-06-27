@@ -89,6 +89,8 @@
       pointer-events: none;
       transition: all 0.3s ease;
       white-space: nowrap;
+      width: 100%;
+      text-align: center;
     }
 
     .word {
@@ -204,7 +206,13 @@
 
     @media (max-width: 768px) {
       .poem-line {
-        font-size: 20px;
+        font-size: 18px;
+        white-space: normal;
+        width: 90%;
+        left: 5% !important;
+        transform: none !important;
+        text-align: center;
+        padding: 0 10px;
       }
       
       .permission-text {
@@ -229,6 +237,11 @@
 
       .status {
         font-size: 10px;
+      }
+
+      .poem-container {
+        width: 95%;
+        height: 70%;
       }
     }
 
