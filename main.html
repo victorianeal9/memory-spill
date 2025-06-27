@@ -82,6 +82,11 @@
       cursor: auto;
     }
 
+    .poem-content {
+      height: 100%;
+      overflow: hidden;
+    }
+
     .poem-line {
       position: absolute;
       font-size: 24px;
@@ -244,7 +249,26 @@
 
       .poem-container {
         width: 95%;
-        height: 80%;
+        height: 85%;
+      }
+
+      .poem-content {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-right: 10px;
+      }
+
+      .poem-content::-webkit-scrollbar {
+        width: 3px;
+      }
+
+      .poem-content::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.1);
+      }
+
+      .poem-content::-webkit-scrollbar-thumb {
+        background: rgba(255,215,0,0.3);
+        border-radius: 3px;
       }
     }
 
@@ -275,7 +299,9 @@
   </div>
 
   <div class="poem-container" id="poem-container">
-    <!-- Poem lines will be inserted here -->
+    <div class="poem-content" id="poem-content">
+      <!-- Poem lines will be inserted here -->
+    </div>
   </div>
 
   <div class="gaze-indicator" id="gaze-indicator"></div>
@@ -350,6 +376,7 @@
       permissionScreen: document.getElementById('permission-screen'),
       permissionButton: document.getElementById('permission-button'),
       poemContainer: document.getElementById('poem-container'),
+      poemContent: document.getElementById('poem-content'),
       gazeIndicator: document.getElementById('gaze-indicator'),
       status: document.getElementById('status'),
       instructions: document.getElementById('instructions'),
@@ -496,22 +523,19 @@
       lineElement.className = 'poem-line';
       
       // Position lines vertically spaced - adjust for mobile wrapping
-      const containerHeight = elements.poemContainer.offsetHeight;
-      let lineHeight, yPosition;
+      let yPosition;
       
       if (isTouchDevice) {
-        // More space between lines on mobile to account for wrapping
-        lineHeight = containerHeight / (POEM_LINES.length * 0.7); // More generous spacing
-        yPosition = lineIndex * lineHeight + 20; // Add top padding
+        // Use relative positioning for mobile (allows scrolling)
+        lineElement.style.position = 'relative';
+        lineElement.style.marginBottom = '40px';
+        lineElement.style.marginTop = lineIndex === 0 ? '20px' : '0';
       } else {
-        // Original spacing for desktop
-        lineHeight = containerHeight / POEM_LINES.length;
+        // Absolute positioning for desktop
+        const containerHeight = elements.poemContainer.offsetHeight;
+        const lineHeight = containerHeight / POEM_LINES.length;
         yPosition = lineIndex * lineHeight;
-      }
-      
-      lineElement.style.top = yPosition + 'px';
-      
-      if (!isTouchDevice) {
+        lineElement.style.top = yPosition + 'px';
         lineElement.style.left = '50%';
         lineElement.style.transform = 'translateX(-50%)';
       }
@@ -539,7 +563,7 @@
         lineElement.appendChild(wordElement);
       });
       
-      elements.poemContainer.appendChild(lineElement);
+      elements.poemContent.appendChild(lineElement);
     }
 
     function updateWordStates() {
