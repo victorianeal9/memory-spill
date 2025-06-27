@@ -529,6 +529,7 @@
     function addPoemLine(text, lineIndex) {
       const lineElement = document.createElement('div');
       lineElement.className = 'poem-line';
+      lineElement.setAttribute('data-line-index', lineIndex);
       
       // Position lines vertically spaced - adjust for mobile wrapping
       let yPosition;
@@ -575,16 +576,36 @@
       
       elements.poemContent.appendChild(lineElement);
       
-      // Auto-scroll and fade in on mobile
+      // Auto-scroll and fade in on mobile - multiple methods for reliability
       if (isTouchDevice) {
-        setTimeout(() => {
+        // Immediate scroll using multiple approaches
+        requestAnimationFrame(() => {
           lineElement.style.opacity = '1';
-          // Smooth scroll to show the new line
-          lineElement.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
-        }, 100);
+          
+          // Method 1: scrollIntoView
+          try {
+            lineElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center',
+              inline: 'nearest'
+            });
+          } catch (e) {
+            console.log('scrollIntoView failed, trying alternative');
+          }
+          
+          // Method 2: Direct scroll calculation (backup)
+          setTimeout(() => {
+            const containerRect = elements.poemContent.getBoundingClientRect();
+            const lineRect = lineElement.getBoundingClientRect();
+            const containerScrollTop = elements.poemContent.scrollTop;
+            const targetScroll = containerScrollTop + (lineRect.top - containerRect.top) - (containerRect.height / 2) + (lineRect.height / 2);
+            
+            elements.poemContent.scrollTo({
+              top: Math.max(0, targetScroll),
+              behavior: 'smooth'
+            });
+          }, 200);
+        });
       }
     }
 
@@ -715,12 +736,18 @@
       if (isTouchDevice) {
         // For mobile, append to main container so it's always visible
         elements.poemContainer.appendChild(endingElement);
-        // Auto-scroll to bottom to ensure ending messages are visible
+        // Force scroll to bottom with multiple methods
         setTimeout(() => {
+          // Method 1: scroll to bottom
           elements.poemContent.scrollTo({
             top: elements.poemContent.scrollHeight,
             behavior: 'smooth'
           });
+          
+          // Method 2: backup scroll (more aggressive)
+          setTimeout(() => {
+            elements.poemContent.scrollTop = elements.poemContent.scrollHeight;
+          }, 500);
         }, 100);
       } else {
         // For desktop, use the original positioning
