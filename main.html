@@ -214,9 +214,6 @@
       .poem-line {
         font-size: 18px;
         white-space: normal;
-        width: 90%;
-        left: 5% !important;
-        transform: translateX(-50%) !important;
         text-align: center;
         padding: 0 10px;
         line-height: 1.3;
@@ -505,26 +502,16 @@
       lineElement.className = 'poem-line';
       
       // Position lines vertically spaced
-      if (isTouchDevice) {
-        // Use absolute positioning for mobile too, but with tighter spacing
-        const containerHeight = elements.poemContainer.offsetHeight;
-        const lineHeight = containerHeight / POEM_LINES.length;
-        const yPosition = lineIndex * lineHeight + 10; // Small top offset
-        lineElement.style.position = 'absolute';
-        lineElement.style.top = yPosition + 'px';
-        lineElement.style.left = '50%';
-        lineElement.style.transform = 'translateX(-50%)';
-        lineElement.style.width = '90%';
-        lineElement.style.textAlign = 'center';
-      } else {
-        // Absolute positioning for desktop
-        const containerHeight = elements.poemContainer.offsetHeight;
-        const lineHeight = containerHeight / POEM_LINES.length;
-        const yPosition = lineIndex * lineHeight;
-        lineElement.style.top = yPosition + 'px';
-        lineElement.style.left = '50%';
-        lineElement.style.transform = 'translateX(-50%)';
-      }
+      const containerHeight = elements.poemContainer.offsetHeight;
+      const lineHeight = containerHeight / POEM_LINES.length;
+      const yPosition = lineIndex * lineHeight + (isTouchDevice ? 10 : 0);
+      
+      lineElement.style.position = 'absolute';
+      lineElement.style.top = yPosition + 'px';
+      lineElement.style.left = '50%';
+      lineElement.style.transform = 'translateX(-50%)';
+      lineElement.style.width = isTouchDevice ? '90%' : 'auto';
+      lineElement.style.textAlign = 'center';
       
       // Split into words
       const wordsArray = text.split(' ');
