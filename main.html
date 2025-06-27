@@ -211,6 +211,36 @@
         font-size: 16px;
         padding: 0 20px;
       }
+
+      .gaze-indicator {
+        width: 40px;
+        height: 40px;
+        border-width: 3px;
+      }
+      
+      body {
+        cursor: default;
+      }
+
+      .instructions {
+        font-size: 12px;
+        bottom: 20px;
+      }
+
+      .status {
+        font-size: 10px;
+      }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      /* Touch devices */
+      .permission-text::after {
+        content: "\A\A(Touch and drag to focus on words)";
+        white-space: pre;
+        font-style: italic;
+        font-size: 0.9em;
+        opacity: 0.8;
+      }
     }
   </style>
 </head>
@@ -222,8 +252,9 @@
       Words survive only while you watch them.<br />
       What you don't see begins to fade.<br /><br />
       
-      <small>(Using mouse movement as gaze tracking)</small>
+      <small id="tracking-method">Using mouse movement as gaze tracking</small>
     </div>
+    
     <button class="permission-button" id="permission-button">Begin Experience</button>
   </div>
 
@@ -233,7 +264,7 @@
 
   <div class="gaze-indicator" id="gaze-indicator"></div>
   
-  <div class="status" id="status">Initializing...</div>
+  <div class="status" id="status">Ready to begin</div>
   
   <div class="instructions" id="instructions">
     Look directly at words to keep them alive
@@ -241,7 +272,6 @@
 
   <script>
     const POEM_LINES_US = [
-      
       { text: "She brings me tea the way mom taught her", delay: 0 },
       { text: "Steam rises between us", delay: 3000 },
       { text: "Her hands move with practised certainty", delay: 6000 },
@@ -271,22 +301,23 @@
       { text: "With love, please let me go", delay: 33000 },
     ];
 
-    // Detect user's locale and select appropriate version
-    const userLocale = navigator.language || navigator.userLanguage || 'en-US';
-    const isUK = userLocale.startsWith('en-GB') || userLocale.startsWith('en-AU') || userLocale.startsWith('en-NZ');
-    const POEM_LINES = isUK ? POEM_LINES_UK : POEM_LINES_US;
-
     const ENDING_SEQUENCE = [
       { text: "Look away now", delay: 38000, type: "plea" },
       { text: "Please... let me go", delay: 43000, type: "desperate", condition: "still_looking" },
       { text: "I'm sorry....", delay: 48000, type: "breaking", condition: "still_looking" }
     ];
 
+    // Detect user's locale and select appropriate version
+    const userLocale = navigator.language || navigator.userLanguage || 'en-US';
+    const isUK = userLocale.startsWith('en-GB') || userLocale.startsWith('en-AU') || userLocale.startsWith('en-NZ');
+    const POEM_LINES = isUK ? POEM_LINES_UK : POEM_LINES_US;
+
+    // Detect device type
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
     // Global variables
-    let gazeTracker = null;
-    let currentGaze = { x: 0, y: 0 };
+    let currentGaze = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     let words = [];
-    let permissionGranted = false;
     let poemStarted = false;
     let endingPhase = false;
     let metaAware = false;
@@ -305,92 +336,41 @@
       poemContainer: document.getElementById('poem-container'),
       gazeIndicator: document.getElementById('gaze-indicator'),
       status: document.getElementById('status'),
-      instructions: document.getElementById('instructions')
+      instructions: document.getElementById('instructions'),
+      trackingMethod: document.getElementById('tracking-method')
     };
 
     // Initialize
+    setupInterface();
+    setupTracking();
     setupPermissionButton();
 
-    function setupPermissionButton() {
-      elements.permissionButton.addEventListener('click', function() {
-        // Skip camera request, go straight to mouse tracking
-        elements.status.textContent = 'Using mouse movement as gaze tracking';
-        setupMouseGazeTracking();
-        hidePermissionScreen();
-      });
-      
-      elements.permissionButton.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          elements.status.textContent = 'Using mouse movement as gaze tracking';
-          setupMouseGazeTracking();
-          hidePermissionScreen();
-        }
-      });
-    }
-
-    async function requestCameraPermission() {
-      try {
-        // Check if getUserMedia is supported
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          throw new Error('Camera not supported in this browser');
-        }
+    function setupInterface() {
+      if (isTouchDevice) {
+        elements.trackingMethod.textContent = 'Touch and drag to focus on words';
+        elements.instructions.textContent = 'Touch and drag to keep words alive';
+        elements.status.textContent = 'Touch device detected';
         
-        elements.status.textContent = 'Requesting camera access...';
-        
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            width: 640, 
-            height: 480,
-            facingMode: 'user'
-          } 
-        });
-        
-        permissionGranted = true;
-        elements.status.textContent = 'Camera ready - using gaze tracking...';
-        
-        await initializeGazeTracking(stream);
-        hidePermissionScreen();
-        
-      } catch (error) {
-        console.error('Camera access issue:', error);
-        // Fallback to mouse tracking
-        elements.status.textContent = 'Using mouse tracking (camera not available)';
-        setupMouseGazeTracking();
-        hidePermissionScreen();
+        // Larger gaze indicator for touch
+        elements.gazeIndicator.style.width = '40px';
+        elements.gazeIndicator.style.height = '40px';
+        elements.gazeIndicator.style.borderWidth = '3px';
+      } else {
+        elements.trackingMethod.textContent = 'Using mouse movement as gaze tracking';
+        elements.instructions.textContent = 'Look directly at words to keep them alive';
+        elements.status.textContent = 'Mouse tracking ready';
       }
     }
 
-    async function initializeGazeTracking(stream) {
-      try {
-        // Create video element for webcam feed (hidden)
-        const video = document.createElement('video');
-        video.srcObject = stream;
-        video.autoplay = true;
-        video.style.display = 'none';
-        document.body.appendChild(video);
-
-        // Wait for video to be ready
-        await new Promise(resolve => {
-          video.addEventListener('loadedmetadata', resolve);
-        });
-
-        // Simple mouse tracking as fallback for demo
-        // In production, you'd integrate WebGazer.js or similar
-        setupMouseGazeTracking();
-        
-        elements.status.textContent = 'Gaze tracking active';
-        
-      } catch (error) {
-        console.error('Gaze tracking initialization failed:', error);
-        // Fallback to mouse tracking
-        setupMouseGazeTracking();
-        elements.status.textContent = 'Using mouse tracking (demo mode)';
+    function setupTracking() {
+      if (isTouchDevice) {
+        setupTouchTracking();
+      } else {
+        setupMouseTracking();
       }
     }
 
-    function setupMouseGazeTracking() {
-      // Fallback: use mouse position as gaze proxy
+    function setupMouseTracking() {
       document.addEventListener('mousemove', function(e) {
         currentGaze.x = e.clientX;
         currentGaze.y = e.clientY;
@@ -399,10 +379,10 @@
         updateGazeIndicator();
       });
 
-      // Track when mouse leaves the window (looking away)
       document.addEventListener('mouseleave', function() {
         lookingAway = true;
         isLookingAtText = false;
+        elements.gazeIndicator.classList.remove('active');
       });
 
       document.addEventListener('mouseenter', function() {
@@ -410,8 +390,33 @@
         lastGazeTime = Date.now();
       });
 
-      // Hide mouse cursor for immersion
+      // Hide cursor for immersion on desktop
       document.body.style.cursor = 'none';
+    }
+
+    function setupTouchTracking() {
+      document.addEventListener('touchstart', handleTouch);
+      document.addEventListener('touchmove', handleTouch);
+      document.addEventListener('touchend', function() {
+        // Keep gaze indicator visible briefly after touch ends
+        setTimeout(() => {
+          if (!poemStarted) return;
+          elements.gazeIndicator.classList.remove('active');
+          lookingAway = true;
+          isLookingAtText = false;
+        }, 500);
+      });
+    }
+
+    function handleTouch(e) {
+      if (e.touches.length > 0) {
+        e.preventDefault();
+        currentGaze.x = e.touches[0].clientX;
+        currentGaze.y = e.touches[0].clientY;
+        lastGazeTime = Date.now();
+        lookingAway = false;
+        updateGazeIndicator();
+      }
     }
 
     function updateGazeIndicator() {
@@ -420,7 +425,17 @@
       elements.gazeIndicator.classList.add('active');
     }
 
-    function hidePermissionScreen() {
+    function setupPermissionButton() {
+      elements.permissionButton.addEventListener('click', startExperience);
+      elements.permissionButton.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          startExperience();
+        }
+      });
+    }
+
+    function startExperience() {
       elements.permissionScreen.classList.add('hidden');
       setTimeout(() => {
         elements.permissionScreen.style.display = 'none';
@@ -432,10 +447,16 @@
       elements.poemContainer.style.display = 'block';
       poemStarted = true;
       
+      if (isTouchDevice) {
+        elements.status.textContent = 'Touch tracking active';
+      } else {
+        elements.status.textContent = 'Mouse tracking active';
+      }
+      
       // Start word degradation loop
       setInterval(updateWordStates, 100);
       
-      // Start checking for looking away during ending phase (more frequent)
+      // Start checking for looking away during ending phase
       lookAwayCheckInterval = setInterval(checkForLookingAway, 200);
       
       // Add poem lines with delays
@@ -498,6 +519,9 @@
       const now = Date.now();
       let currentlyLookingAtAnyText = false;
       
+      // Adjust gaze radius based on device type
+      const gazeRadius = isTouchDevice ? 80 : 50;
+      
       words.forEach(wordData => {
         const rect = wordData.element.getBoundingClientRect();
         const distance = Math.sqrt(
@@ -505,8 +529,8 @@
           Math.pow(currentGaze.y - (rect.top + rect.height / 2), 2)
         );
         
-        // Check if gaze is on this word (within 50px radius)
-        if (distance < 50 && !lookingAway) {
+        // Check if gaze is on this word
+        if (distance < gazeRadius && !lookingAway) {
           // Word is being looked at
           wordData.lastGazeTime = now;
           wordData.degradationLevel = Math.max(0, wordData.degradationLevel - 2);
@@ -545,8 +569,6 @@
         isLookingAtText = true;
         lastTimeOnText = now;
       } else {
-        // Only update isLookingAtText to false if we're actually not looking at text
-        // Give a small buffer to prevent flickering
         if (now - lastTimeOnText > 100) {
           isLookingAtText = false;
         }
@@ -559,14 +581,12 @@
       let degradedText = originalText;
       
       if (degradationLevel > 5) {
-        // Replace characters with dots
         const charsToReplace = Math.min(degradationLevel - 5, originalText.length);
         degradedText = originalText.substring(0, Math.max(0, originalText.length - charsToReplace)) + 
                      '.'.repeat(charsToReplace);
       }
       
       if (degradationLevel > 10) {
-        // Complete degradation
         degradedText = '.'.repeat(originalText.length);
       }
       
@@ -579,20 +599,15 @@
       const now = Date.now();
       const timeSinceOnText = now - lastTimeOnText;
       
-      // During ending phase, be more responsive to looking away
-      // If user hasn't looked at text for 1 second (reduced from 2), show gratitude
       if (timeSinceOnText > 1000 && !isLookingAtText) {
         showGratitude();
       }
       
-      // Also check if mouse is outside window
       if (lookingAway) {
         showGratitude();
       }
       
-      // Additional check: if user is not currently looking at any text right now
       if (!isLookingAtText && endingPhase) {
-        // Give a shorter grace period once "look away" message appears
         if (timeSinceOnText > 800) {
           showGratitude();
         }
@@ -603,24 +618,19 @@
       endingSequenceIndex = index;
 
       if (index === 0) {
-        // First meta moment - start the ending phase
         startMetaPhase();
         metaAware = true;
       }
 
-      // Don't show more ending messages if gratitude already shown
       if (gratitudeShown) return;
 
-      // Clear previous ending text
       clearEndingText();
 
-      // Add new ending text
       const endingElement = document.createElement('div');
       endingElement.className = `poem-line ${ending.type}-text ending-text`;
       endingElement.textContent = ending.text;
       endingElement.id = 'current-ending';
       
-      // Position in center
       endingElement.style.top = '50%';
       endingElement.style.left = '50%';
       endingElement.style.transform = 'translate(-50%, -50%)';
@@ -632,7 +642,6 @@
 
     function startMetaPhase() {
       endingPhase = true;
-      // Fade all existing words rapidly
       words.forEach(wordData => {
         wordData.degradationLevel = 15;
         wordData.element.classList.add('dead');
@@ -652,7 +661,6 @@
       
       clearEndingText();
       
-      // Clear the look away check interval
       if (lookAwayCheckInterval) {
         clearInterval(lookAwayCheckInterval);
       }
@@ -668,7 +676,6 @@
       
       elements.poemContainer.appendChild(gratitudeElement);
       
-      // Fade everything to black after gratitude
       setTimeout(() => {
         document.body.style.transition = 'background-color 5s ease';
         document.body.style.backgroundColor = '#000';
@@ -679,7 +686,6 @@
 
     // Handle window resize
     window.addEventListener('resize', function() {
-      // Reposition poem lines after orientation change
       const containerHeight = elements.poemContainer.offsetHeight;
       const usableHeight = containerHeight * 0.8;
       const lineHeight = usableHeight / POEM_LINES.length;
