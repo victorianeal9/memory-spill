@@ -402,9 +402,6 @@
         lookingAway = false;
         lastGazeTime = Date.now();
       });
-
-      // Hide cursor for immersion on desktop
-      document.body.style.cursor = 'none';
     }
 
     function setupTouchTracking() {
@@ -460,9 +457,13 @@
       elements.poemContainer.style.display = 'block';
       poemStarted = true;
       
+      // Hide cursor only on touch devices (phones/tablets)
       if (isTouchDevice) {
+        document.body.style.cursor = 'none';
         elements.status.textContent = 'Touch tracking active';
       } else {
+        // Keep cursor visible on laptops/desktops
+        document.body.style.cursor = 'default';
         elements.status.textContent = 'Mouse tracking active';
       }
       
