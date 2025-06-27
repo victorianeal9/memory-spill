@@ -79,6 +79,7 @@
       max-width: 800px;
       height: 60%;
       display: none;
+      cursor: auto;
     }
 
     .poem-line {
@@ -464,8 +465,8 @@
         document.body.style.cursor = 'none';
         elements.status.textContent = 'Touch tracking active';
       } else {
-        // Keep cursor visible on laptops/desktops
-        document.body.style.cursor = 'default';
+        // Keep cursor visible on laptops/desktops - explicitly set it
+        document.body.style.cursor = 'auto';
         elements.status.textContent = 'Mouse tracking active';
       }
       
