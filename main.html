@@ -283,7 +283,7 @@
   <div class="status" id="status">Ready to begin</div>
   
   <div class="instructions" id="instructions">
-    Move directly at words to keep them alive
+    Look directly at words to keep them alive
   </div>
 
   <script>
@@ -294,9 +294,9 @@
       { text: "I should know these hands", delay: 9000 },
       { text: "The woman making tea has kind eyes", delay: 12000 },
       { text: "She says my name like it still fits", delay: 15000 },
-      { text: "She loves me. I can feel it.", delay: 18500 },
+      { text: "She loves me. I can feel it.", delay: 18000 },
       { text: "She sits in the chair beside me", delay: 21000 },
-      { text: "Has she always been there?", delay: 24500 },
+      { text: "Has she always been there?", delay: 24000 },
       { text: "I reach out but cannot surface", delay: 27000 },
       { text: "With love, please let me go", delay: 30000 },
     ];
@@ -308,17 +308,17 @@
       { text: "I should know these hands", delay: 9000 },
       { text: "The woman making tea has kind eyes", delay: 12000 },
       { text: "She says my name like it still fits", delay: 15000 },
-      { text: "She loves me. I can feel it.", delay: 18500 },
+      { text: "She loves me. I can feel it.", delay: 18000 },
       { text: "She sits in the chair beside me", delay: 21000 },
-      { text: "Has she always been there?", delay: 24500 },
+      { text: "Has she always been there?", delay: 24000 },
       { text: "I reach out but cannot surface", delay: 27000 },
       { text: "With love, please let me go", delay: 30000 },
     ];
 
     const ENDING_SEQUENCE = [
       { text: "Let go now", delay: 35000, type: "plea" },
-      { text: "Please... let me go", delay: 40000, type: "desperate", condition: "still_moving" },
-      { text: "I'm sorry....", delay: 45000, type: "breaking", condition: "still_moving" }
+      { text: "Please... let me go", delay: 40000, type: "desperate", condition: "still_looking" },
+      { text: "I'm sorry....", delay: 45000, type: "breaking", condition: "still_looking" }
     ];
 
     // Detect user's locale and select appropriate version
@@ -335,13 +335,13 @@
     let poemStarted = false;
     let endingPhase = false;
     let metaAware = false;
-    let MovingAway = false;
+    let lookingAway = false;
     let lastGazeTime = Date.now();
     let endingSequenceIndex = 0;
-    let ismovingAtText = false;
+    let isLookingAtText = false;
     let lastTimeOnText = Date.now();
     let gratitudeShown = false;
-    let movAwayCheckInterval = null;
+    let lookAwayCheckInterval = null;
 
     // Elements
     const elements = {
@@ -390,18 +390,18 @@
         currentGaze.x = e.clientX;
         currentGaze.y = e.clientY;
         lastGazeTime = Date.now();
-        movingAway = false;
+        lookingAway = false;
         updateGazeIndicator();
       });
 
       document.addEventListener('mouseleave', function() {
-        movingAway = true;
-        ismovingAtText = false;
+        lookingAway = true;
+        isLookingAtText = false;
         elements.gazeIndicator.classList.remove('active');
       });
 
       document.addEventListener('mouseenter', function() {
-        movingAway = false;
+        lookingAway = false;
         lastGazeTime = Date.now();
       });
     }
@@ -414,8 +414,8 @@
         setTimeout(() => {
           if (!poemStarted) return;
           elements.gazeIndicator.classList.remove('active');
-          movingAway = true;
-          isMovingAtText = false;
+          lookingAway = true;
+          isLookingAtText = false;
         }, 500);
       });
     }
@@ -426,7 +426,7 @@
         currentGaze.x = e.touches[0].clientX;
         currentGaze.y = e.touches[0].clientY;
         lastGazeTime = Date.now();
-        MovingAway = false;
+        lookingAway = false;
         updateGazeIndicator();
       }
     }
@@ -472,8 +472,8 @@
       // Start word degradation loop
       setInterval(updateWordStates, 100);
       
-      // Start checking for moving away during ending phase
-      movAwayCheckInterval = setInterval(checkFormovingAway, 200);
+      // Start checking for looking away during ending phase
+      lookAwayCheckInterval = setInterval(checkForLookingAway, 200);
       
       // Add poem lines with delays
       POEM_LINES.forEach((line, index) => {
@@ -536,7 +536,7 @@
       if (!poemStarted) return;
       
       const now = Date.now();
-      let currentlymovingAtAnyText = false;
+      let currentlyLookingAtAnyText = false;
       
       // Adjust gaze radius based on device type
       const gazeRadius = isTouchDevice ? 80 : 50;
@@ -549,15 +549,15 @@
         );
         
         // Check if gaze is on this word
-        if (distance < gazeRadius && !movingAway) {
-          // Word is being moved at
+        if (distance < gazeRadius && !lookingAway) {
+          // Word is being looked at
           wordData.lastGazeTime = now;
           wordData.degradationLevel = Math.max(0, wordData.degradationLevel - 2);
           wordData.element.classList.add('focused');
           wordData.element.classList.remove('degrading', 'fading', 'dying', 'dead');
-          currentlyMovingAtAnyText = true;
+          currentlyLookingAtAnyText = true;
         } else {
-          // Word is not being Moved at
+          // Word is not being looked at
           wordData.element.classList.remove('focused');
           
           const timeSinceGaze = now - wordData.lastGazeTime;
@@ -583,13 +583,13 @@
         }
       });
       
-      // Update text-Moving state
-      if (currentlyMovingAtAnyText) {
-        isMovingAtText = true;
+      // Update text-looking state
+      if (currentlyLookingAtAnyText) {
+        isLookingAtText = true;
         lastTimeOnText = now;
       } else {
         if (now - lastTimeOnText > 100) {
-          isMovingAtText = false;
+          isLookingAtText = false;
         }
       }
     }
@@ -612,21 +612,21 @@
       wordData.element.textContent = degradedText;
     }
 
-    function checkForMovingAway() {
+    function checkForLookingAway() {
       if (!endingPhase || gratitudeShown) return;
       
       const now = Date.now();
       const timeSinceOnText = now - lastTimeOnText;
       
-      if (timeSinceOnText > 1000 && !isMovingAtText) {
+      if (timeSinceOnText > 1000 && !isLookingAtText) {
         showGratitude();
       }
       
-      if (MovingAway) {
+      if (lookingAway) {
         showGratitude();
       }
       
-      if (!isMovingAtText && endingPhase) {
+      if (!isLookingAtText && endingPhase) {
         if (timeSinceOnText > 800) {
           showGratitude();
         }
@@ -680,8 +680,8 @@
       
       clearEndingText();
       
-      if (MoveAwayCheckInterval) {
-        clearInterval(MoveAwayCheckInterval);
+      if (lookAwayCheckInterval) {
+        clearInterval(lookAwayCheckInterval);
       }
       
       const gratitudeElement = document.createElement('div');
@@ -719,7 +719,5 @@
   </script>
 </body>
 </html>
-
-
 
 
