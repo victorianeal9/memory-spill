@@ -287,7 +287,22 @@
   </div>
 
   <script>
+    // ----- Translations for each country -----
     const POEM_LINES_US = [
+      { text: "Tea. Her hands mother-taught.", delay: 0 },
+      { text: "Steam thickens between us", delay: 3000 },
+      { text: "Her hands move with practiced certainty", delay: 6000 },
+      { text: "I should know these hands", delay: 9000 },
+      { text: "The woman making tea has kind eyes", delay: 12000 },
+      { text: "She says my name like it still fits", delay: 15000 },
+      { text: "She loves me. I can feel it.", delay: 18000 },
+      { text: "She sits in the chair beside me", delay: 21000 },
+      { text: "Has she always been there?", delay: 24000 },
+      { text: "I reach out but cannot surface", delay: 27000 },
+      { text: "With love, please let me go", delay: 30000 },
+    ];
+
+    const POEM_LINES_AU = [
       { text: "Tea. Her hands mother-taught.", delay: 0 },
       { text: "Steam thickens between us", delay: 3000 },
       { text: "Her hands move with practised certainty", delay: 6000 },
@@ -301,18 +316,46 @@
       { text: "With love, please let me go", delay: 30000 },
     ];
 
-    const POEM_LINES_UK = [
-      { text: "Tea. Her hands mother-taught.", delay: 0 },
-      { text: "Steam thickens between us", delay: 3000 },
-      { text: "Her hands move with practised certainty", delay: 6000 },
-      { text: "I should know these hands", delay: 9000 },
-      { text: "The woman making tea has kind eyes", delay: 12000 },
-      { text: "She says my name like it still fits", delay: 15000 },
-      { text: "She loves me. I can feel it.", delay: 18000 },
-      { text: "She sits in the chair beside me", delay: 21000 },
-      { text: "Has she always been there?", delay: 24000 },
-      { text: "I reach out but cannot surface", delay: 27000 },
-      { text: "With love, please let me go", delay: 30000 },
+    const POEM_LINES_IN = [
+      { text: "चाय। उसके हाथ माँ ने सिखाए।", delay: 0 },
+      { text: "भाप हमारे बीच गाढ़ी होती है", delay: 3000 },
+      { text: "उसके हाथ निश्चित रूप से चलते हैं", delay: 6000 },
+      { text: "मुझे इन हाथों को जानना चाहिए", delay: 9000 },
+      { text: "चाय बनाने वाली महिला की दयालु आँखें हैं", delay: 12000 },
+      { text: "वह अपना नाम कहती है जैसे वह अभी भी फिट है", delay: 15000 },
+      { text: "वह मुझसे प्यार करती है। मैं महसूस कर सकता हूँ।", delay: 18000 },
+      { text: "वह मेरी कुर्सी के पास बैठती है", delay: 21000 },
+      { text: "क्या वह हमेशा वहां रही है?", delay: 24000 },
+      { text: "मैं पहुँचने की कोशिश करता हूँ लेकिन सतह पर नहीं आ सकता", delay: 27000 },
+      { text: "प्यार के साथ, कृपया मुझे जाने दें", delay: 30000 },
+    ];
+
+    const POEM_LINES_CN = [
+      { text: "茶。她的手是母亲教的。", delay: 0 },
+      { text: "蒸汽在我们之间浓厚", delay: 3000 },
+      { text: "她的手动作熟练", delay: 6000 },
+      { text: "我应该认识这些手", delay: 9000 },
+      { text: "做茶的女人有一双善良的眼睛", delay: 12000 },
+      { text: "她叫我的名字，就像它依然合适", delay: 15000 },
+      { text: "她爱我。我能感受到。", delay: 18000 },
+      { text: "她坐在我旁边的椅子上", delay: 21000 },
+      { text: "她一直都在那里吗？", delay: 24000 },
+      { text: "我伸手但无法浮出水面", delay: 27000 },
+      { text: "请让我走，带着爱", delay: 30000 },
+    ];
+
+    const POEM_LINES_BR = [
+      { text: "Chá. Suas mãos foram ensinadas pela mãe.", delay: 0 },
+      { text: "O vapor se adensa entre nós", delay: 3000 },
+      { text: "Suas mãos se movem com certeza praticada", delay: 6000 },
+      { text: "Devo conhecer essas mãos", delay: 9000 },
+      { text: "A mulher que faz chá tem olhos bondosos", delay: 12000 },
+      { text: "Ela diz meu nome como se ainda coubesse", delay: 15000 },
+      { text: "Ela me ama. Eu posso sentir.", delay: 18000 },
+      { text: "Ela se senta na cadeira ao meu lado", delay: 21000 },
+      { text: "Ela sempre esteve lá?", delay: 24000 },
+      { text: "Eu estendo a mão, mas não consigo emergir", delay: 27000 },
+      { text: "Com amor, por favor, me deixe ir", delay: 30000 },
     ];
 
     const ENDING_SEQUENCE = [
@@ -323,8 +366,17 @@
 
     // Detect user's locale and select appropriate version
     const userLocale = navigator.language || navigator.userLanguage || 'en-US';
-    const isUK = userLocale.startsWith('en-GB') || userLocale.startsWith('en-AU') || userLocale.startsWith('en-NZ');
-    const POEM_LINES = isUK ? POEM_LINES_UK : POEM_LINES_US;
+    let POEM_LINES = POEM_LINES_US; // default US
+
+    if (userLocale.startsWith('en-GB') || userLocale.startsWith('en-AU') || userLocale.startsWith('en-NZ')) {
+      POEM_LINES = POEM_LINES_AU;
+    } else if (userLocale.startsWith('hi') || userLocale.startsWith('en-IN')) {
+      POEM_LINES = POEM_LINES_IN;
+    } else if (userLocale.startsWith('zh') || userLocale.startsWith('zh-CN')) {
+      POEM_LINES = POEM_LINES_CN;
+    } else if (userLocale.startsWith('pt') || userLocale.startsWith('pt-BR')) {
+      POEM_LINES = POEM_LINES_BR;
+    }
 
     // Detect device type
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
